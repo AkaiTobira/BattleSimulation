@@ -1,6 +1,8 @@
 
 from enum import Enum
 
+POINT_DISTANCE = 25
+
 class Colors(Enum):
 	LIGHT_BLUE   = (24,191,158)
 	LIGHT_PURPLE = (159,133,188)

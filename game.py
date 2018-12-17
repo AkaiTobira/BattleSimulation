@@ -10,7 +10,7 @@ from colors    import Colors, get_color
 
 
 NUMBER_OF_ENEMIES   = 4
-NUMBER_OF_OBSTACLES = 15
+NUMBER_OF_OBSTACLES = 18
 
 START_POSITION      = Vector(512,360)
 

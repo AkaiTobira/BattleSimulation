@@ -1,13 +1,16 @@
 import pygame
 import math
+import time
 
 from vector import Vector
 from random import randint
 from events import Events, rise_event
-from colors import Colors, get_color
+from colors import Colors, get_color, POINT_DISTANCE
 from graph  import Graph
+from objects import *
 from ai     import *
-import time
+
+
 
 
 class UnitManager:
@@ -20,6 +23,9 @@ class UnitManager:
 	mv_system      = None
 	cl_system      = None
 	graph          = None
+	start          = 0
+	duration       = 0
+	items_list    = []
 	
 	
 	def __init__(self, units,  screen,screen_size):
@@ -29,8 +35,9 @@ class UnitManager:
 		self.screen           = screen
 		self.mv_system        = MoveSystem(units)
 		self.cl_system        = CollisionSystem(units, screen_size)
-		self.graph            = Graph(50,20)
-
+		self.graph            = Graph(int(1024/POINT_DISTANCE) + 2,int(720/POINT_DISTANCE) + 2)
+		self.duration = randint(15, 20)
+		self.start = time.time()
 		for obst in units[1]:
 			self.graph.remove_nodes( obst.get_covered_space() )
 		self.graph.generate_neighbour_net()
@@ -41,6 +48,8 @@ class UnitManager:
 		for obj in ( self.enemy_list + self.obstacle_list ):
 			obj.draw()
 
+		for item in self.items_list:
+			item.draw()
 		self.graph.draw(self.screen)
 
 		
@@ -64,10 +73,35 @@ class UnitManager:
 			obj.process_event(event)
 	
 		#self.player.process_event(event)
+
+	def spawn_item(self, delta):
+
+		node = self.graph.get_random_node()
+		while node == None:
+			node = self.graph.get_random_node()
+
+		item_id = randint(0,3)
+		if item_id == 0 :
+			self.items_list.append( ItemHp(self.screen, node.position) )
+		else : #item_id == 1 :
+			self.items_list.append( ItemAmmo(self.screen, node.position ))
+		
+
+					
+
+		pass
 		
 	def process_physics(self,delta):
 		self.mv_system.update(delta)
 		self.cl_system.update(delta)
+
+		if  time.time() - self.start > self.duration:
+			self.duration = randint(15, 20)
+			self.spawn_item(delta)
+			self.spawn_item(delta)
+			self.spawn_item(delta)
+			self.start = time.time()
+
 		for enemy in self.enemy_list:
 			if enemy.is_dead: self.enemy_list.remove(enemy)
 

@@ -1,7 +1,10 @@
 import pygame
 
+from random import randint
 from vector import *
-from colors import Colors, get_color
+from colors import Colors, get_color, POINT_DISTANCE
+
+
 
 class Node:
     neighbours = None
@@ -14,14 +17,13 @@ class Node:
         self.neighbours = llist       
 
 class Graph:
-    nodes = None
-
+    nodes  = None
     def __init__(self, x_size, y_size):
         self.nodes = []
         for i in range( x_size ):
             self.nodes.append([])
             for j in range( y_size):
-                self.nodes[i].append(Node(Vector(i * 20, j *20)))
+                self.nodes[i].append(Node(Vector(i * POINT_DISTANCE, j *POINT_DISTANCE)))
 
     def remove_node(self, node_position):
         for i in range(len(self.nodes)):
@@ -35,24 +37,30 @@ class Graph:
 
     def __is_valid(self, coor ,pair):
         sumx = coor[0] + pair[0]
-        if sumx >= 0 and sumx < len(self.nodes)-20:
+        if sumx > 0 and sumx < len(self.nodes):
             sumy = coor[1] + pair[1] 
-            if sumy >= 0 and sumy < len(self.nodes)-20:
+            if sumy > 0 and sumy < len(self.nodes):
                 return True
         return False
 
     def generate_neighbour_net(self):
         possible_neighbours = [ (-1,0), (1,0), (-1,-1), (1,1), (-1,1), (1,-1), (0,1), (0,-1)]
 
-        for i in range( len(self.nodes) ):
-            for j in range( len(self.nodes[i])):
+        for i in range( len(self.nodes) -1):
+            for j in range( len(self.nodes[i])-1):
                 if self.nodes[i][j] == None :continue
                 t = []
                 for neighbour in possible_neighbours:
-                    if self.__is_valid((i,j),neighbour) and self.nodes[i + neighbour[0]][j + neighbour[1]] != None:
-                        t.append(self.nodes[i + neighbour[0]][j + neighbour[1]])
+                    if self.__is_valid((i,j),neighbour) :
+                        if self.nodes[i + neighbour[0]][j + neighbour[1]] != None:
+                            t.append(self.nodes[i + neighbour[0]][j + neighbour[1]])
                 self.nodes[i][j].set_neighbours(t)
 
+    def get_random_node(self):
+        return self.nodes[randint(0,len(self.nodes)-1)][randint(0, len(self.nodes[0])-1)]
+
+    def get_node(self,i,j):
+        return self.nodes[i][j]
 
     def draw(self, screen):
         for i in range(len(self.nodes)):

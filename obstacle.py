@@ -4,10 +4,10 @@ import math
 from events   import Events, rise_event
 from random   import randint, randrange
 from vector   import Vector
-from colors   import Colors, get_color
+from colors   import Colors, get_color, POINT_DISTANCE
 
 
-POINT_DISTANCE = 20
+
 
 class Triangle:
 	vertices = []
@@ -75,7 +75,7 @@ class Obstacle:
 	
 	
 	def __init__(self, screen, screen_size, id, obs_list):
-		self.RADIUS = randrange(0 * POINT_DISTANCE,16 * POINT_DISTANCE,2*POINT_DISTANCE) 
+		self.RADIUS = randrange(0 * POINT_DISTANCE, 10 * POINT_DISTANCE,2*POINT_DISTANCE) 
 		
 		self.current_screen   = screen
 		self.screen_size = screen_size
@@ -89,7 +89,10 @@ class Obstacle:
 								   self.RADIUS)
 		self.rect.center = self.current_position.to_touple()
 
-
+		self.covered_space = []
+		for x in range( self.rect.right,  self.rect.left + 1, POINT_DISTANCE ):
+			for y in range( self.rect.top, self.rect.bottom + 1, POINT_DISTANCE ):
+				self.covered_space.append(Vector(x,y))
 
 		
 	def get_covered_space(self):
@@ -114,15 +117,6 @@ class Obstacle:
 		#			overlap = True
 
 		self.face 	  = Vector(self.current_position.x, self.current_position.y - 200)
-
-
-		self.covered_space = []
-		for x in range( self.current_position.x - self.RADIUS, self.current_position.x + self.RADIUS, POINT_DISTANCE ):
-			for y in range( self.current_position.y - self.RADIUS, self.current_position.y + self.RADIUS, POINT_DISTANCE ):
-				self.covered_space.append(Vector(x,y))
-
-
-
 
 	def is_colliding(self, other):
 		distance = (self.current_position - other.current_position).len()
