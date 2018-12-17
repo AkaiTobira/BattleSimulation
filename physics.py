@@ -5,6 +5,7 @@ from vector import Vector
 from random import randint
 from events import Events, rise_event
 from colors import Colors, get_color
+from graph  import Graph
 from ai     import *
 import time
 
@@ -18,6 +19,7 @@ class UnitManager:
 	screen         = None 
 	mv_system      = None
 	cl_system      = None
+	graph          = None
 	
 	
 	def __init__(self, units,  screen,screen_size):
@@ -27,15 +29,20 @@ class UnitManager:
 		self.screen           = screen
 		self.mv_system        = MoveSystem(units)
 		self.cl_system        = CollisionSystem(units, screen_size)
+		self.graph            = Graph(50,20)
+
+		for obst in units[1]:
+			self.graph.remove_nodes( obst.get_covered_space() )
+		self.graph.generate_neighbour_net()
+
 		
 	def draw(self):
 		self.screen.fill(get_color(Colors.NAVYBLUE))
 		for obj in ( self.enemy_list + self.obstacle_list ):
 			obj.draw()
 
-		for i in range(0, 1024,20):
-			for j in range( 0, 720, 20):
-				pygame.draw.circle(self.screen, (255,255,255), (i,j), 1 )
+		self.graph.draw(self.screen)
+
 		
 		
 	def process_input(self,event):

@@ -71,6 +71,7 @@ class Obstacle:
 	velocity         = Vector(0,0)
 	triangle         = None
 	rect             = None
+	covered_space    = None
 	
 	
 	def __init__(self, screen, screen_size, id, obs_list):
@@ -89,8 +90,10 @@ class Obstacle:
 		self.rect.center = self.current_position.to_touple()
 
 
+
 		
-		
+	def get_covered_space(self):
+			return self.covered_space
 
 
 	def set_position(self, obs_list):
@@ -111,6 +114,12 @@ class Obstacle:
 		#			overlap = True
 
 		self.face 	  = Vector(self.current_position.x, self.current_position.y - 200)
+
+
+		self.covered_space = []
+		for x in range( self.current_position.x - self.RADIUS, self.current_position.x + self.RADIUS, POINT_DISTANCE ):
+			for y in range( self.current_position.y - self.RADIUS, self.current_position.y + self.RADIUS, POINT_DISTANCE ):
+				self.covered_space.append(Vector(x,y))
 
 
 

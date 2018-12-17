@@ -1,0 +1,69 @@
+import pygame
+
+from vector import *
+from colors import Colors, get_color
+
+class Node:
+    neighbours = None
+    position   = None
+
+    def __init__(self, position):
+        self.position = position
+
+    def set_neighbours(self, llist):
+        self.neighbours = llist       
+
+class Graph:
+    nodes = None
+
+    def __init__(self, x_size, y_size):
+        self.nodes = []
+        for i in range( x_size ):
+            self.nodes.append([])
+            for j in range( y_size):
+                self.nodes[i].append(Node(Vector(i * 20, j *20)))
+
+    def remove_node(self, node_position):
+        for i in range(len(self.nodes)):
+            for j in range(len(self.nodes[i])):
+                if self.nodes[i][j] != None and self.nodes[i][j].position == node_position:
+                    self.nodes[i][j] = None
+
+    def remove_nodes(self, nodes_position_list):
+        for node in nodes_position_list:
+            self.remove_node(node)
+
+    def __is_valid(self, coor ,pair):
+        sumx = coor[0] + pair[0]
+        if sumx >= 0 and sumx < len(self.nodes)-20:
+            sumy = coor[1] + pair[1] 
+            if sumy >= 0 and sumy < len(self.nodes)-20:
+                return True
+        return False
+
+    def generate_neighbour_net(self):
+        possible_neighbours = [ (-1,0), (1,0), (-1,-1), (1,1), (-1,1), (1,-1), (0,1), (0,-1)]
+
+        for i in range( len(self.nodes) ):
+            for j in range( len(self.nodes[i])):
+                if self.nodes[i][j] == None :continue
+                t = []
+                for neighbour in possible_neighbours:
+                    if self.__is_valid((i,j),neighbour) and self.nodes[i + neighbour[0]][j + neighbour[1]] != None:
+                        t.append(self.nodes[i + neighbour[0]][j + neighbour[1]])
+                self.nodes[i][j].set_neighbours(t)
+
+
+    def draw(self, screen):
+        for i in range(len(self.nodes)):
+            for j in range( len(self.nodes[i])):
+                if self.nodes[i][j] is None : continue
+                pygame.draw.circle(screen, (255,255,255), self.nodes[i][j].position.to_table(), 1 )
+                if self.nodes[i][j].neighbours is None : continue
+                for neighbour in self.nodes[i][j].neighbours:
+                    pygame.draw.line(screen, get_color(Colors.RED),self.nodes[i][j].position.to_table(), neighbour.position.to_table(), 1 )
+
+    def show_structure(self):
+        for i in range(len(self.nodes)):
+            for j in range( len(self.nodes[i])):
+                print( i, j, self.nodes[i][j].position, self.nodes[i][j].neighbours )
