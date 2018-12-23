@@ -36,8 +36,9 @@ class UnitManager:
 		self.mv_system        = MoveSystem(units)
 		self.cl_system        = CollisionSystem(units, screen_size)
 		self.graph            = Graph(int(1024/POINT_DISTANCE) + 2,int(720/POINT_DISTANCE) + 2)
-		self.duration = randint(15, 20)
-		self.start = time.time()
+		self.duration         = randint(15, 20)
+		self.start            = time.time()
+		
 		for obst in units[1]:
 			self.graph.remove_nodes( obst.get_covered_space() )
 		self.graph.generate_neighbour_net()
@@ -50,12 +51,15 @@ class UnitManager:
 
 		for item in self.items_list:
 			item.draw()
-		self.graph.draw(self.screen)
+	#	self.graph.draw(self.screen)
 
 		
 		
 	def process_input(self,event):
 	
+		if event.type == Events.SHOOT2:
+			self.items_list.append( BazookaMissle( self.screen, event.fro, event.direction))
+
 		if event.type == Events.COLLIDE:
 			if event.who == 0:
 			#	self.player.process_event(event)
@@ -80,15 +84,15 @@ class UnitManager:
 		while node == None:
 			node = self.graph.get_random_node()
 
-		item_id = randint(0,3)
+		item_id = randint(0,5)
 		if item_id == 0 :
 			self.items_list.append( ItemHp(self.screen, node.position) )
-		else : #item_id == 1 :
-			self.items_list.append( ItemAmmo(self.screen, node.position ))
-		
-
-					
-
+		elif item_id == 1 :
+			self.items_list.append( ItemAmmoBazzoka(self.screen, node.position ))
+		elif item_id == 2 :
+			self.items_list.append( ItemArmour(self.screen, node.position))
+		else :
+			self.items_list.append( ItemAmmoRailgun(self.screen, node.position ))
 		pass
 		
 	def process_physics(self,delta):
@@ -104,6 +108,10 @@ class UnitManager:
 
 		for enemy in self.enemy_list:
 			if enemy.is_dead: self.enemy_list.remove(enemy)
+		
+		for item in self.items_list:
+			if item.exist : item.update(delta) 
+			else : self.items_list.remove(item)
 
 	def add_unit(self,unit):
 		self.zombie_counter += 1

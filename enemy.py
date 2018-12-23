@@ -11,7 +11,7 @@ class Triangle:
 	basic    = [] 
 	
 	def __init__(self, size):
-		self.vertices = [Vector(0.0,-1.0)*size, Vector(-1.0,1.0)*size, Vector(1.0,1.0)*size]
+		self.vertices = [Vector(0.0,-1.5)*size, Vector(-1.0,1.0)*size, Vector(1.0,1.0)*size]
 		self.basic = self.vertices.copy()
 		
 	def rotate(self, angle):
@@ -40,9 +40,10 @@ class EnemyRotateBehavior:
 		self.position = position
 		self.face 	  = Vector(position.x, position.y - 200)
 		self.facing   = velocity
+		self.process_rotattion()
 
 	def process_rotattion(self):
-		self.rotation_angle = (self.face - self.position).norm().angle_between((self.facing - self.position).norm())
+		self.rotation_angle = (self.face - self.position).norm().angle_between((self.facing).norm())
 		self.rotation_change = True
 
 	def print_rotation_angle(self):
@@ -60,7 +61,7 @@ class EnemyRotateBehavior:
 
 class Enemy2:
 	THICKNESS = 2
-	RADIUS    = 6
+	RADIUS    = 8
 	COLOR     = get_color(Colors.LIGHT_BLUE)
 
 	current_screen    = None
@@ -82,6 +83,12 @@ class Enemy2:
 	is_dead           = False
 
 	representation    = None 
+
+	hp           = 100
+	hp_max       = 100
+	armour       = 100
+	ammo_railgun = 100
+	ammo_bazooka = 100
 
 	def __init__(self,  screen, screen_size, id):
 
@@ -137,20 +144,47 @@ class Enemy2:
 			if point is not None:
 				self.is_dead = True
 
-		
+	def bazooka_shot(self):
+		rise_event( Events.SHOOT2, {  "atack_type" : "Baz",  "fro" : self.current_position, "direction" : self.velocity })
+
+	def railgun_shot(self):
+		rise_event( Events.SHOOT2, {  "atack_type" : "Rai",  "fro" : self.current_position, "to" : self.current_position + ( self.velocity.norm() * 125 ) })
+
 	def update(self,delta):
 		self.previous_position = self.current_position	
 		self.current_position += self.velocity * delta
-		self.rotate_behaviour.update_position(self.current_position, self.velocity)
-		self.rotate_behaviour.process_rotattion()
 		self.handle_rotation()
 	
 	def handle_rotation(self):
+		self.rotate_behaviour.update_position(self.current_position, self.velocity)
 		if self.rotate_behaviour.get_rotation_change() :
 			self.representation.rotate(self.rotate_behaviour.get_rotation_angle())
 
 	def draw(self):
+		#HP & Armor simulation Begin
+
+		self.hp = self.hp - 1
+		if ( self.hp == 0) : 
+			self.hp = self.hp_max 
+			self.bazooka_shot()
+
+		percent = self.hp / self.hp_max
+
+		low_hp_color = get_color(Colors.RED)
+		hig_hp_color = get_color(Colors.GREEN)
+
+		self.COLOR = ( low_hp_color[0] * (1 - percent) + hig_hp_color[0] * percent, 
+		               low_hp_color[1] * (1 - percent) + hig_hp_color[1] * percent,
+					   low_hp_color[2] * (1 - percent) + hig_hp_color[2] * percent )
+
+		self.armour = self.armour + 3
+
+		#HP & Armor simulation End
+
+		pygame.draw.line(self.current_screen, get_color(Colors.KHAKI) ,self.current_position.to_table(), ( self.current_position + (self.velocity.norm() * 50 ) ).to_table() , 2 )
+
 		if self.visible and not self.is_dead and not self.triggered :
+			pygame.draw.polygon(self.current_screen,  get_color(Colors.BLACK), self.representation.to_draw(self.current_position), 5 * int(self.armour / 1000) )
 			pygame.draw.polygon(self.current_screen, self.COLOR, self.representation.to_draw(self.current_position), self.THICKNESS )
 		elif not self.visible:
 			pass

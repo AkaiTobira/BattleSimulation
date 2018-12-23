@@ -18,8 +18,11 @@ class Colors(Enum):
 	NAVYBLUE	 = (20,30,47)
 	WHITE		 = (255,255,255)
 	BLUE_BAR	 = (50,160,255)
+	KHAKI        = (240,230,140)
 	
 def get_color( color ):
+	if color == Colors.KHAKI:
+		return (240,230,140)
 	if color == Colors.LIGHT_BLUE:
 		return (24,191,158)
 	if color == Colors.LIGHT_PURPLE:

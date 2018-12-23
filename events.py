@@ -14,6 +14,7 @@ from enum import IntEnum
 class Events(IntEnum):
 	COLLIDE         = 25
 	SHOOT           = 26
+	SHOOT2          = 30
 	IS_READY	    = 27
 	INTERSECTION    = 28
 	HIT_ENEMY_CHECK = 29

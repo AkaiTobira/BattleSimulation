@@ -4,14 +4,13 @@ from random import randint
 from vector import *
 from colors import Colors, get_color, POINT_DISTANCE
 
-
-
 class Node:
-    neighbours = None
+    neighbours = []
     position   = None
 
     def __init__(self, position):
-        self.position = position
+        self.position   = position
+        self.neighbours = []
 
     def set_neighbours(self, llist):
         self.neighbours = llist       
@@ -35,12 +34,11 @@ class Graph:
         for node in nodes_position_list:
             self.remove_node(node)
 
-    def __is_valid(self, coor ,pair):
-        sumx = coor[0] + pair[0]
-        if sumx > 0 and sumx < len(self.nodes):
-            sumy = coor[1] + pair[1] 
-            if sumy > 0 and sumy < len(self.nodes):
-                return True
+    def __is_valid(self, i, j):
+        if i >= 0 and i < len(self.nodes):
+            if j >= 0 and j < len(self.nodes):
+                if self.nodes[i][j] != None:
+                    return True
         return False
 
     def generate_neighbour_net(self):
@@ -49,12 +47,9 @@ class Graph:
         for i in range( len(self.nodes) -1):
             for j in range( len(self.nodes[i])-1):
                 if self.nodes[i][j] == None :continue
-                t = []
                 for neighbour in possible_neighbours:
-                    if self.__is_valid((i,j),neighbour) :
-                        if self.nodes[i + neighbour[0]][j + neighbour[1]] != None:
-                            t.append(self.nodes[i + neighbour[0]][j + neighbour[1]])
-                self.nodes[i][j].set_neighbours(t)
+                    if self.__is_valid(i + neighbour[0], j + neighbour[1]) :
+                        self.nodes[i][j].neighbours.append(self.nodes[i + neighbour[0]][j + neighbour[1]])
 
     def get_random_node(self):
         return self.nodes[randint(0,len(self.nodes)-1)][randint(0, len(self.nodes[0])-1)]
