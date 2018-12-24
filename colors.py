@@ -19,8 +19,11 @@ class Colors(Enum):
 	WHITE		 = (255,255,255)
 	BLUE_BAR	 = (50,160,255)
 	KHAKI        = (240,230,140)
+	ORANGERED    = (255,69,0)
 	
 def get_color( color ):
+	if color == Colors.ORANGERED:
+		return (255,69,0)
 	if color == Colors.KHAKI:
 		return (240,230,140)
 	if color == Colors.LIGHT_BLUE:

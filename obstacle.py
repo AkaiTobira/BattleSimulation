@@ -6,9 +6,6 @@ from random   import randint, randrange
 from vector   import Vector
 from colors   import Colors, get_color, POINT_DISTANCE
 
-
-
-
 class Triangle:
 	vertices = []
 	basic    = [] 
@@ -94,6 +91,13 @@ class Obstacle:
 			for y in range( self.rect.top, self.rect.bottom + 1, POINT_DISTANCE ):
 				self.covered_space.append(Vector(x,y))
 
+		self.RADIUS = self.RADIUS/2
+
+	def is_in_obstacle(self, point):
+		if point.x >= self.rect.right and point.x <= self.rect.left + 1:
+			if point.y >= self.rect.top and point.y <= self.rect.bottom + 1:
+				return True
+		return False
 		
 	def get_covered_space(self):
 			return self.covered_space
@@ -172,15 +176,10 @@ class Obstacle:
 			rise_event( Events.INTERSECTION, { "point" : point } )
 		
 	def set_player_position(self, position):
-	#	self.player_position = position
 		self.angle = (self.face - self.current_position).norm().angle_between((position - self.current_position).norm()) 
 
 	def process_physics(self):
 		pass
 	
-	angle = 0
 	def update(self, delta):
-
-	#	self.triangle.rotate(self.angle)
-		
 		pass

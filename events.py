@@ -9,8 +9,6 @@ from enum import IntEnum
 # w odpowiednim process_event dodac if-a pasujacego do enuma
 # prztworzyc ... tyle
 
-
-
 class Events(IntEnum):
 	COLLIDE         = 25
 	SHOOT           = 26

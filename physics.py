@@ -10,9 +10,6 @@ from graph  import Graph
 from objects import *
 from ai     import *
 
-
-
-
 class UnitManager:
 	obstacle_list = []
 	enemy_list    = []
@@ -53,12 +50,27 @@ class UnitManager:
 			item.draw()
 	#	self.graph.draw(self.screen)
 
-		
-		
+	def get_enemy(self, l_id):
+		for enemy in self.enemy_list:
+			if l_id == enemy.id: return enemy 
+
 	def process_input(self,event):
 	
 		if event.type == Events.SHOOT2:
-			self.items_list.append( BazookaMissle( self.screen, event.fro, event.direction))
+			if event.atack_type == "Baz":
+				self.items_list.append( BazookaMissle( self.screen, event.fro, event.direction))
+				return
+			if event.atack_type == "Rai":
+				point = event.to
+				for obstacle in self.obstacle_list:
+					point_condidate = obstacle.check_intersection( event.fro, event.to)
+					if point_condidate is None: continue
+					if point_condidate.distance_to(event.fro).len() < point.distance_to(event.fro).len() : point = point_condidate
+				self.get_enemy(event.enemy_id).set_to_railgun(point)
+				for enemy in self.enemy_list:
+					if enemy.check_intersection( event.fro, point ):
+						enemy.get_hit(None, 100)
+				return
 
 		if event.type == Events.COLLIDE:
 			if event.who == 0:
@@ -112,6 +124,10 @@ class UnitManager:
 		for item in self.items_list:
 			if item.exist : item.update(delta) 
 			else : self.items_list.remove(item)
+
+			if item.is_missle : 
+				if not item.explode : self.cl_system.missle_impact(item)
+				else : self.cl_system.get_hit(item)
 
 	def add_unit(self,unit):
 		self.zombie_counter += 1
@@ -181,28 +197,6 @@ class CollisionSystem:
 		self.screen_size = Vector( screen_size[0], screen_size[1] ) 
 		self.whole_objcts  = units[0] + units[1]
 	
-	def __is_colliding(self, unit, unit_2, distance):
-		if unit == unit_2: return False
-		if distance > 60.0: return False
-		if distance <= math.fabs( unit.RADIUS + unit_2.RADIUS + self.OFFSET ) : return True
-
-	def __is_stuck(self, unit, unit_2, distance):
-		if distance <= math.fabs(unit_2.RADIUS - unit.RADIUS + self.OFFSET): return True
-		return False
-
-	def __detect_collision_with_obstacle(self, unit,delta):
-		for unit_2 in self.obstacle_list:
-			distance = ( unit.current_position + unit.velocity*delta ).distance_to(unit_2.current_position + unit_2.velocity*delta).len()
-			if self.__is_colliding(unit,unit_2,distance):
-				self.__send_collision_message(unit, unit_2, self.__is_stuck(unit,unit_2,distance),delta)
-
-	def __detect_collision_with_unit(self, unit,delta):
-		for unit_2 in self.enemy_list:
-			distance = ( unit.current_position + unit.velocity*delta ).distance_to(unit_2.current_position + unit_2.velocity*delta).len()
-			if self.__is_colliding(unit,unit_2,distance):
-				self.__send_collision_message(unit, unit_2, self.__is_stuck(unit,unit_2,distance),delta)
-				if not unit_2.velocity.is_zero_len():
-					self.__send_collision_message( unit_2, unit, self.__is_stuck(unit_2,unit,distance),delta)
 
 	def __send_collision_message(self, unit, unit_2, is_stuck,delta):
 		rise_event(Events.COLLIDE, { "who" : unit.id, "hurt": ( False if unit_2.state == "Const" else True), "stuck" : is_stuck, "with" : unit_2.id, "where" : unit.current_position - unit.velocity*delta  } )
@@ -216,31 +210,23 @@ class CollisionSystem:
 
 		return False
 
-	def __detect_collision_with_wall(self, unit,delta):
-		if not self.is_in_square(unit, delta) :
-			rise_event(Events.COLLIDE, { "who" : unit.id, "hurt" : False, "stuck" : False, "with" : -1, "where" : unit.current_position - unit.velocity*delta  } )
+	def get_hit(self, missle):
+		for enemy in self.enemy_list:
+			if missle.current_position.distance_to(enemy.current_position).len() < enemy.RADIUS:
+				enemy.get_hit(missle) 	
 
-	#def __detect_collision_for_player(self,delta):
-	#	self.__detect_collision_with_obstacle(self.player,delta)
-	#	self.__detect_collision_with_unit(self.player,delta)
-	#	self.__detect_collision_with_wall(self.player,delta)
-
-	def __detect_collision_for_enemies(self,delta):
-		for unit in self.enemy_list:
-			if not unit.velocity.is_zero_len():
-				self.__detect_collision_with_unit(unit,delta)
-				self.__detect_collision_with_obstacle(unit,delta)
-	#			self.__detect_collision_with_wall(unit)
+	def missle_impact(self, missle):
+		for obj in self.whole_objcts:
+			if obj.is_in_obstacle(missle.current_position):
+#			if missle.current_position.distance_to(obj.current_position).len() < obj.RADIUS:
+				missle.make_explode() 	
 
 	def update(self, delta):
-	#	self.__detect_collision_for_player(delta)
 		self.__predict_collisions(delta)
 		for unit in self.enemy_list:
-		#	self.__get_five(unit)
 			self.__select_closest(unit)
-		#	self.runaway(unit, self.player)
 			if unit.is_dead: self.enemy_list.remove(unit)
-	#	self.__detect_collision_for_enemies(delta)
+
 
 	def runaway(self, unit, player):
 		if unit.current_position.distance_to(player.current_position).len() < 150 and not unit.triggered and unit.can_react:
@@ -294,45 +280,3 @@ class CollisionSystem:
 
 
 		return closest_obstacle
-
-	def __get_clossest_obstacle2(self,unit,delta):     
-		dist_to_the_closest     = 9999999999
-		closest_obstacle        = None
-					
-		for obstacle in self.whole_objcts:
-			if unit == obstacle : continue
-			if obstacle.current_position.distance_to(unit.current_position).len() > 50: continue
-			
-			local_position = unit.current_position.to_local_space(obstacle.current_position)
-			if local_position.x < 0: continue
-			
-			expanded_radius = unit.RADIUS + obstacle.RADIUS
-			if abs(local_position.y) > expanded_radius: continue
-			
-			sqrPart = math.sqrt(expanded_radius**2 - local_position.y**2)
-			ip = local_position.x - sqrPart if local_position.x - sqrPart > 0 else local_position.x + sqrPart
-			
-			if ip < dist_to_the_closest:
-				dist_to_the_closest     = ip
-				closest_obstacle        = obstacle
-		
-		return closest_obstacle
-
-	def __get_five(self, unit):
-		print( time.time(), self.start )
-		if time.time() - self.start < 3 : return  
-		
-		closest = []
-		for enem in self.enemy_list:
-			if enem.current_position.distance_to( unit.current_position ).len() < 65:
-				if enem.triggered == False : 
-					closest.append(enem)
-					
-			
-			if len(closest) > 2:
-				print( "NOW GO HUNT!!")
-				for c in closest:
-					c.triggered = True
-					c.ai.set_current_state(PlayerHunt())
-				self.start = time.time()
-				return

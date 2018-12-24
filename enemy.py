@@ -61,7 +61,7 @@ class EnemyRotateBehavior:
 
 class Enemy2:
 	THICKNESS = 2
-	RADIUS    = 8
+	RADIUS    = 9
 	COLOR     = get_color(Colors.LIGHT_BLUE)
 
 	current_screen    = None
@@ -82,16 +82,24 @@ class Enemy2:
 	visible			  = True
 	is_dead           = False
 
+	last_hit_by       = None
+
 	representation    = None 
 
 	hp           = 100
 	hp_max       = 100
-	armour       = 100
+	armour       = 0
 	ammo_railgun = 100
 	ammo_bazooka = 100
 
-	def __init__(self,  screen, screen_size, id):
+	railgun_to = Vector(0,0)
+	draw_railgun = False
 
+	low_hp_color = get_color(Colors.RED)
+	hig_hp_color = get_color(Colors.GREEN)
+
+	def __init__(self,  screen, screen_size, id):
+		self.draw_railgun     = False
 		self.current_screen   = screen
 		self.screen_size      = screen_size
 		self.current_position = Vector(randint(0,self.screen_size.x), randint(0,self.screen_size.y))
@@ -145,46 +153,67 @@ class Enemy2:
 				self.is_dead = True
 
 	def bazooka_shot(self):
-		rise_event( Events.SHOOT2, {  "atack_type" : "Baz",  "fro" : self.current_position, "direction" : self.velocity })
+		rise_event( Events.SHOOT2, {  "atack_type" : "Baz",  "fro" : self.current_position + self.velocity.norm() * 10, "direction" : self.velocity })
 
 	def railgun_shot(self):
-		rise_event( Events.SHOOT2, {  "atack_type" : "Rai",  "fro" : self.current_position, "to" : self.current_position + ( self.velocity.norm() * 125 ) })
+		rise_event( Events.SHOOT2, {  "atack_type" : "Rai", "enemy_id" : self.id,  "fro" : self.current_position + self.velocity.norm()* 10, "to" : self.current_position + ( self.velocity.norm() * 400 ) })
 
 	def update(self,delta):
 		self.previous_position = self.current_position	
 		self.current_position += self.velocity * delta
 		self.handle_rotation()
+		if randint(0, 100) == 3 : self.bazooka_shot()
+		if randint(0, 100) == 5 : self.railgun_shot()
 	
+	def set_to_railgun( self, point):
+		self.railgun_to = point
+		self.draw_railgun = True
+
 	def handle_rotation(self):
 		self.rotate_behaviour.update_position(self.current_position, self.velocity)
 		if self.rotate_behaviour.get_rotation_change() :
 			self.representation.rotate(self.rotate_behaviour.get_rotation_angle())
 
+	def deal_dmg(self, dmg):
+		self.hp     -=  (1 - (self.armour/100)) * dmg
+		self.armour -=  dmg
+			
+		if self.armour < 0 : self.armour = 0
+
+		percent = (self.hp if self.hp > 0 else 0) / self.hp_max
+
+		self.COLOR = (  self.low_hp_color[0] * (1 - percent) + self.hig_hp_color[0] * percent, 
+						self.low_hp_color[1] * (1 - percent) + self.hig_hp_color[1] * percent,
+						self.low_hp_color[2] * (1 - percent) + self.hig_hp_color[2] * percent )
+
+		self.armour = self.armour + 0.1
+
+
+	def get_ammo(self):
+		return [ self.ammo_railgun, self.ammo_bazooka ]
+
+	def is_in_obstacle(self, point):
+		if point.distance_to(self.current_position).len() < self.RADIUS: return True
+		return False
+
+	def get_hit(self, missle, dmg = 0):
+		if missle == None:
+			self.deal_dmg( dmg )
+			return
+
+		if self.last_hit_by != missle:
+			self.last_hit_by = missle
+			self.deal_dmg( missle.get_dmg() )
+			return
+
 	def draw(self):
-		#HP & Armor simulation Begin
-
-		self.hp = self.hp - 1
-		if ( self.hp == 0) : 
-			self.hp = self.hp_max 
-			self.bazooka_shot()
-
-		percent = self.hp / self.hp_max
-
-		low_hp_color = get_color(Colors.RED)
-		hig_hp_color = get_color(Colors.GREEN)
-
-		self.COLOR = ( low_hp_color[0] * (1 - percent) + hig_hp_color[0] * percent, 
-		               low_hp_color[1] * (1 - percent) + hig_hp_color[1] * percent,
-					   low_hp_color[2] * (1 - percent) + hig_hp_color[2] * percent )
-
-		self.armour = self.armour + 3
-
-		#HP & Armor simulation End
-
 		pygame.draw.line(self.current_screen, get_color(Colors.KHAKI) ,self.current_position.to_table(), ( self.current_position + (self.velocity.norm() * 50 ) ).to_table() , 2 )
+		if self.draw_railgun : 
+			pygame.draw.line(self.current_screen, get_color(Colors.RED) , (self.current_position + (self.velocity.norm() * 5 )).to_table(), ( self.railgun_to ).to_table() , 2 )
+			self.draw_railgun = False
 
 		if self.visible and not self.is_dead and not self.triggered :
-			pygame.draw.polygon(self.current_screen,  get_color(Colors.BLACK), self.representation.to_draw(self.current_position), 5 * int(self.armour / 1000) )
+			pygame.draw.polygon(self.current_screen,  get_color(Colors.BLACK), self.representation.to_draw(self.current_position), int( 5 * self.armour / 1000) )
 			pygame.draw.polygon(self.current_screen, self.COLOR, self.representation.to_draw(self.current_position), self.THICKNESS )
 		elif not self.visible:
 			pass

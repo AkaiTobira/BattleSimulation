@@ -9,7 +9,7 @@ from colors    import Colors, get_color
 #from hud       import HUD
 
 
-NUMBER_OF_ENEMIES   = 4
+NUMBER_OF_ENEMIES   = 5
 NUMBER_OF_OBSTACLES = 18
 
 START_POSITION      = Vector(512,360)
@@ -54,7 +54,6 @@ class Game:
 	def draw(self):
 		self.state.draw()
 		if self.state.state_name == "GAME" : pygame.display.flip()
-
 
 class Stete:
 	need_restart = False
