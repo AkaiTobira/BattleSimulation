@@ -137,6 +137,7 @@ class Obstacle:
 	def draw(self):
 		pygame.draw.rect( self.current_screen, get_color(Colors.LIGHT_PURPL2),  self.rect  )
 		pygame.draw.rect( self.current_screen, self.COLOR_OUT                ,  self.rect, self.THICK  )
+		pygame.draw.circle(self.current_screen, get_color(Colors.DARK_YELLOW), self.current_position.to_table(), int(self.RADIUS))
 	#	pygame.draw.polygon (
 	#		self.current_screen,  
 	#		get_color(Colors.LIGHTER_RED), 
@@ -147,6 +148,39 @@ class Obstacle:
 
 	#def is_in_shade(self, point):
 	#	return self.triangle.is_in_triangle(point)
+
+	def line_square_intersection(self, begin, end):
+		v_shoot = end - begin
+		v_obs   = self.current_position - begin
+		dot = (v_shoot.norm()).dot(v_obs.norm())
+		if dot < 0: return None
+		if v_shoot.len() < v_obs.len(): return None
+
+		points = [ Vector(self.rect.right, self.rect.top   ),
+				   Vector(self.rect.right, self.rect.bottom),
+				   Vector(self.rect.left , self.rect.top   ),
+				   Vector(self.rect.left , self.rect.bottom)
+				 ]
+	# General Equesion of Line
+		A = begin.y - end.y
+		B = end.x - begin.x 
+		C = ( begin.x - end.x)*begin.y + ( end.y - begin.y)*begin.x
+	#
+		t = []
+		for p in points:
+			D = A * p.x + B * p.y + C 
+			if D == 0 : return p
+			t.append( self.__sign(D) )
+
+		if t[0] ==  1 and t[1] ==  1 and t[2] ==  1 and t[3] ==  1: return None
+		if t[0] == -1 and t[1] == -1 and t[2] == -1 and t[3] == -1: return None
+
+		return (v_obs.len() * v_shoot.norm()) + begin 
+
+	def __sign(self, n):
+		if n > 0 : return 1
+		if n < 0 : return -1
+		return 0
 
 	def check_intersection(self, shoot_from, shoot_to):
 		v_shoot = shoot_to - shoot_from

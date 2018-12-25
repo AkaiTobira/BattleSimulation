@@ -134,6 +134,8 @@ class Enemy2:
 		if dot > 0 : 
 			v_len = v_enemy.len()
 			if v_len > v_shoot.len() : return point
+			if dot >  1: dot = 1
+			if dot < -1: dot = -1
 			angle = math.acos(dot)
 			distance = 2 * math.tan(angle/2) * v_len
 			if distance <= self.RADIUS:
@@ -156,14 +158,17 @@ class Enemy2:
 		rise_event( Events.SHOOT2, {  "atack_type" : "Baz",  "fro" : self.current_position + self.velocity.norm() * 10, "direction" : self.velocity })
 
 	def railgun_shot(self):
+		self.railgun_to = self.current_position + ( self.velocity.norm() * 400 )
 		rise_event( Events.SHOOT2, {  "atack_type" : "Rai", "enemy_id" : self.id,  "fro" : self.current_position + self.velocity.norm()* 10, "to" : self.current_position + ( self.velocity.norm() * 400 ) })
 
 	def update(self,delta):
+		if self.hp < 0: self.is_dead = True
+
 		self.previous_position = self.current_position	
 		self.current_position += self.velocity * delta
 		self.handle_rotation()
-		if randint(0, 100) == 3 : self.bazooka_shot()
-		if randint(0, 100) == 5 : self.railgun_shot()
+	#	if randint(0, 100) == 3 : self.bazooka_shot()
+		if not self.draw_railgun: self.railgun_shot()
 	
 	def set_to_railgun( self, point):
 		self.railgun_to = point
@@ -179,6 +184,8 @@ class Enemy2:
 		self.armour -=  dmg
 			
 		if self.armour < 0 : self.armour = 0
+
+		
 
 		percent = (self.hp if self.hp > 0 else 0) / self.hp_max
 
@@ -211,6 +218,8 @@ class Enemy2:
 		if self.draw_railgun : 
 			pygame.draw.line(self.current_screen, get_color(Colors.RED) , (self.current_position + (self.velocity.norm() * 5 )).to_table(), ( self.railgun_to ).to_table() , 2 )
 			self.draw_railgun = False
+
+		pygame.draw.circle(self.current_screen, get_color(Colors.RED), self.current_position.to_table(), 400, 1 )
 
 		if self.visible and not self.is_dead and not self.triggered :
 			pygame.draw.polygon(self.current_screen,  get_color(Colors.BLACK), self.representation.to_draw(self.current_position), int( 5 * self.armour / 1000) )

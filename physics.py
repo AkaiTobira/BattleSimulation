@@ -63,11 +63,12 @@ class UnitManager:
 			if event.atack_type == "Rai":
 				point = event.to
 				for obstacle in self.obstacle_list:
-					point_condidate = obstacle.check_intersection( event.fro, event.to)
+					point_condidate = obstacle.line_square_intersection( event.fro, event.to)
 					if point_condidate is None: continue
 					if point_condidate.distance_to(event.fro).len() < point.distance_to(event.fro).len() : point = point_condidate
 				self.get_enemy(event.enemy_id).set_to_railgun(point)
 				for enemy in self.enemy_list:
+					if event.enemy_id == enemy.id : continue
 					if enemy.check_intersection( event.fro, point ):
 						enemy.get_hit(None, 100)
 				return
