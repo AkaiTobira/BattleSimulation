@@ -23,6 +23,9 @@ class UnitManager:
 	start          = 0
 	duration       = 0
 	items_list    = []
+	path = []
+
+	liseee = []
 	
 	
 	def __init__(self, units,  screen,screen_size):
@@ -30,8 +33,6 @@ class UnitManager:
 		self.obstacle_list    = units[1]
 		self.zombie_counter   = len(self.enemy_list)
 		self.screen           = screen
-		self.mv_system        = MoveSystem(units)
-		self.cl_system        = CollisionSystem(units, screen_size)
 		self.graph            = Graph(int(1024/POINT_DISTANCE) + 2,int(720/POINT_DISTANCE) + 2)
 		self.duration         = randint(15, 20)
 		self.start            = time.time()
@@ -39,6 +40,20 @@ class UnitManager:
 		for obst in units[1]:
 			self.graph.remove_nodes( obst.get_covered_space() )
 		self.graph.generate_neighbour_net()
+
+
+		for unit in range(len(units[0])):
+			while self.graph.get_node( int(units[0][unit].current_position.x/POINT_DISTANCE), int(units[0][unit].current_position.y/POINT_DISTANCE) ) == None:
+				units[0][unit].current_position = self.graph.get_random_node().position		
+
+
+		for i in range(20):
+			v = Vector(randint(0,1024),randint(0,720))
+			print( self.graph.get_closeset_node( v ).position , v )
+			self.liseee.append( [ self.graph.get_closeset_node( v ).position , v ])
+
+		self.mv_system        = MoveSystem(units)
+		self.cl_system        = CollisionSystem(units, screen_size)
 
 		
 	def draw(self):
@@ -48,7 +63,16 @@ class UnitManager:
 
 		for item in self.items_list:
 			item.draw()
-	#	self.graph.draw(self.screen)
+
+		self.graph.draw(self.screen)
+		
+		for i in self.liseee:
+			pygame.draw.line(self.screen, get_color(Colors.BLUE_BAR) , i[0].to_table(), i[1].to_table() , 2 )
+			pygame.draw.circle(self.screen, get_color(Colors.BLACK), i[0].to_table(), 4, 1)
+
+
+
+
 
 	def get_enemy(self, l_id):
 		for enemy in self.enemy_list:
@@ -93,11 +117,13 @@ class UnitManager:
 
 	def spawn_item(self, delta):
 
+		self.path = self.graph.get_path( Vector(0,0), self.graph.get_random_node().position )
+
 		node = self.graph.get_random_node()
 		while node == None:
 			node = self.graph.get_random_node()
 
-		item_id = randint(0,5)
+		item_id = randint(0,4)
 		if item_id == 0 :
 			self.items_list.append( ItemHp(self.screen, node.position) )
 		elif item_id == 1 :
@@ -108,27 +134,66 @@ class UnitManager:
 			self.items_list.append( ItemAmmoRailgun(self.screen, node.position ))
 		pass
 		
-	def process_physics(self,delta):
-		self.mv_system.update(delta)
-		self.cl_system.update(delta)
 
+
+	def check_spawn_item_time(self, delta):
 		if  time.time() - self.start > self.duration:
-			self.duration = randint(15, 20)
-			self.spawn_item(delta)
-			self.spawn_item(delta)
-			self.spawn_item(delta)
+			self.duration = randint(13, 17)
+			for i in range(8):
+				self.spawn_item(delta)
 			self.start = time.time()
 
+	def scan_space_for_items(self, enemy):
+		in_range_objects = []
+		for item in  self.items_list :
+			if item.current_position.distance_to(enemy.current_position).len() < ( 250 ):
+				in_range_objects.append(item)
+		return in_range_objects
+
+	def scan_space_for_enemies(self, enemy):
+		in_range_enemies = []
+		for enemy2 in self.enemy_list:
+			if enemy == enemy2 : continue
+			if enemy2.current_position.distance_to(enemy.current_position).len() < ( 250 ):
+				in_range_enemies.append(enemy2)	
+		return in_range_enemies
+
+
+	def process_path_need(self, enemy):
+		if enemy.need_path : 
+			enemy.path = self.graph.get_path(enemy.current_position, enemy.destination)
+			if len(enemy.path) != 0: enemy.need_path = False
+
+	def process_physics(self,delta):
+		self.mv_system.update(delta)
+	#	self.cl_system.update(delta)
+
+		self.check_spawn_item_time(delta)
+
 		for enemy in self.enemy_list:
-			if enemy.is_dead: self.enemy_list.remove(enemy)
+			enemy.scaner = [ self.scan_space_for_enemies(enemy), 
+							 self.scan_space_for_items(enemy) ]
+
+			self.process_path_need(enemy)
+
+			if enemy.is_dead: 
+				print( "PLayer " + str(enemy.id) + " eliminated" )
+				self.enemy_list.remove(enemy)
 		
 		for item in self.items_list:
-			if item.exist : item.update(delta) 
-			else : self.items_list.remove(item)
 
 			if item.is_missle : 
 				if not item.explode : self.cl_system.missle_impact(item)
 				else : self.cl_system.get_hit(item)
+			else :
+				for enemy in self.enemy_list:
+					if item.current_position.distance_to(enemy.current_position).len() < ( 15 + item.RADIUS ):
+						enemy.add_statistic( item.get_addigs() )
+
+			if item.exist : item.update(delta) 
+			else : self.items_list.remove(item)
+
+		
 
 	def add_unit(self,unit):
 		self.zombie_counter += 1
@@ -176,7 +241,9 @@ class MoveSystem:
 		#	self.hide_unseen_enemy(enemy)
 			enemy.ai.update(delta)
 			enemy.update(delta)
-			if enemy.is_dead: self.enemy_list.remove(enemy)
+			if enemy.is_dead: 
+				print( "PLayer " + str(enemy.id) + " eliminated" )
+				self.enemy_list.remove(enemy)
 
 	#	self.player.update(delta)
 					
@@ -226,7 +293,9 @@ class CollisionSystem:
 		self.__predict_collisions(delta)
 		for unit in self.enemy_list:
 			self.__select_closest(unit)
-			if unit.is_dead: self.enemy_list.remove(unit)
+			if unit.is_dead:
+				print( "PLayer " + str(unit.id) + " eliminated" )
+				self.enemy_list.remove(unit)
 
 
 	def runaway(self, unit, player):

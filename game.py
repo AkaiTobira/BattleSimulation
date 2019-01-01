@@ -9,7 +9,7 @@ from colors    import Colors, get_color
 #from hud       import HUD
 
 
-NUMBER_OF_ENEMIES   = 5
+NUMBER_OF_ENEMIES   = 4
 NUMBER_OF_OBSTACLES = 20
 
 START_POSITION      = Vector(512,360)
@@ -47,7 +47,10 @@ class Game:
 			self.state.process_input(event)
 
 	def update(self,delta):
-		if self.state.is_simulation_end(): self.state = StateOver(self.resolution, self.name, self.screen)
+		if self.state.is_simulation_end():
+			id = self.state.unitManager.enemy_list[0] 
+			self.state = StateOver(self.resolution, self.name, self.screen)
+			self.state.set_win_id(id)
 		if self.state.restart()          : self.state = StateGame(self.resolution, self.name, self.screen)
 		self.state.update(delta)
 	
@@ -79,6 +82,8 @@ class Stete:
 class StateOver(Stete):
 	state_name   = "WIN"
 	
+	win_id = 0
+
 	def fill_screen(self, screen):
 		screen.fill(get_color(Colors.NAVYBLUE))
 		return
@@ -92,13 +97,16 @@ class StateOver(Stete):
 		screen.blit(text, text_rect)
 
 	
+	def set_win_id(self,id):
+		self.win_id = id
+
 	def draw_label_with_text(self, screen):
 
 		self.render_text(
 			screen,
 			get_color(Colors.WHITE),
 			40,
-			"YOU WON",
+			"PLAYER " + str(id) + " WON",
 			START_POSITION
 		)
 
@@ -159,6 +167,8 @@ class StateGame(Stete):
 	#	self.HUD.process_event(event)
 			
 
+	def is_simulation_end(self):
+		return len(self.unitManager.enemy_list) == 1 
 
 	def restart(self):
 		return False 

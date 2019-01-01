@@ -74,6 +74,8 @@ class Obstacle:
 	def __init__(self, screen, screen_size, id, obs_list):
 		self.RADIUS = randrange(0 * POINT_DISTANCE, 10 * POINT_DISTANCE,2*POINT_DISTANCE) 
 		
+		if self.RADIUS == 0 : self.RADIUS += 1
+
 		self.current_screen   = screen
 		self.screen_size = screen_size
 		

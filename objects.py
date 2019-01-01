@@ -10,6 +10,11 @@ class Item:
     initializated    = 0
     exist            = True
     is_missle        = False
+    addings          = []
+
+    COLOR            = Colors.WHITE
+
+    RADIUS           = 5 
 
     def __init__( self, screen, position):
         self.initializated    = time.time()
@@ -20,53 +25,72 @@ class Item:
         if time.time() - self.initializated > durration:
             self.exist = False
 
+    def draw_time_out(self, durration):
+        font = pygame.font.SysFont("consolas", int(10) )
+        text = font.render( str(int(  durration - ( time.time() - self.initializated )  )) , True, get_color(self.COLOR))
+        text_rect = text.get_rect(center=(self.current_position.x, self.current_position.y - 10))
+        self.screen.blit(text, text_rect)
+
+    def get_addigs(self):
+        self.exist = False
+        return self.addings
+
 class ItemHp(Item):
+    COLOR = Colors.GREEN
+    addings = [ "HP", 50 ]
+
     def draw(self):
-        pygame.draw.circle(self.screen, get_color(Colors.GREEN), self.current_position.to_table(), 5 )
-        pass
+        pygame.draw.circle(self.screen, get_color(self.COLOR), self.current_position.to_table(), 5 )
+        self.draw_time_out(50)
+
 
     def update(self, delta):
-        self.time_out( 10 )
-        pass
+        self.time_out( 50 )
 
     def process(self):
         pass
+
 
 
 class ItemArmour(Item):
+    COLOR = Colors.WHITE
+    addings = [ "AA", 50 ]
+
     def draw(self):
-        pygame.draw.circle(self.screen, get_color(Colors.YELLOW), self.current_position.to_table(), 5 )
-        pass
+        pygame.draw.circle(self.screen, get_color(self.COLOR), self.current_position.to_table(), 5 )
+        self.draw_time_out(35)
 
     def update(self, delta):
-        self.time_out( 20 )
-        pass
+        self.time_out( 35 )
 
     def process(self):
         pass
+
+
 
 class ItemAmmo(Item):
-    def draw(self):
-        pygame.draw.circle(self.screen, get_color(Colors.BLUE_BAR), self.current_position.to_table(), 5 )
-        pass
-
     def update(self, delta):
-        self.time_out( 20 )
-        pass
+        self.time_out( 40 )
 
     def process(self):
         pass
 
-
 class ItemAmmoBazzoka(ItemAmmo):
-    def draw(self):
-        pygame.draw.circle(self.screen, get_color(Colors.WHITE), self.current_position.to_table(), 5 )
+    COLOR = Colors.GOLD
+    addings = [ "AB", 15 ]
 
+    def draw(self):
+        pygame.draw.circle(self.screen, get_color(self.COLOR), self.current_position.to_table(), 5 )
+        self.draw_time_out(40)
 
 class ItemAmmoRailgun(ItemAmmo):
-     def draw(self):
-        pygame.draw.circle(self.screen, get_color(Colors.BLACK), self.current_position.to_table(), 5 )
-        pass
+    COLOR = Colors.DARK_VIOLET
+    addings = [ "AR", 15 ]
+
+    def draw(self):
+        pygame.draw.circle(self.screen, get_color(self.COLOR), self.current_position.to_table(), 5 )
+        self.draw_time_out(40)
+
 
 class BazookaMissle:
     spawn_point      = None
@@ -78,6 +102,7 @@ class BazookaMissle:
     explode          = False
     is_missle        = True 
     dmg              = 75
+    addings          = [ "BZ", 0 ]
 
     def __init__( self, screen, position, direction):
        
@@ -116,5 +141,5 @@ class BazookaMissle:
             self.current_position += self.direction * 200 * delta 
             self.time_out()
         else:
-            self.RADIUS = int((( time.time() - self.initializated ) / 0.50 ) * 50) 
+            self.RADIUS = int((( time.time() - self.initializated ) / 0.50 ) * 100) 
             if self.RADIUS > 45 : self.exist = False

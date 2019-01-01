@@ -20,8 +20,22 @@ class Colors(Enum):
 	BLUE_BAR	 = (50,160,255)
 	KHAKI        = (240,230,140)
 	ORANGERED    = (255,69,0)
+	GOLD         = (255,215,0)
+	GRAY         = (128,128,128)
+	CRIMSON      = (220,20,60)
+	DARK_VIOLET  = (148,0,211)
 	
 def get_color( color ):
+	if color == Colors.DARK_VIOLET:
+		return (148,0,211)
+	if color == Colors.GRAY:
+		return (128,128,128)
+	if color == Colors.CRIMSON:
+		return (220,20,60)
+	if color == Colors.GOLD:
+		return (255,215,0)
+	if color == Colors.WHITE:
+		return (255,255,255)
 	if color == Colors.ORANGERED:
 		return (255,69,0)
 	if color == Colors.KHAKI:

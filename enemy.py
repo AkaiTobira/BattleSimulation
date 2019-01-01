@@ -1,8 +1,8 @@
 import pygame
 
 from events import Events, rise_event
-from random import randint
-from colors import Colors, get_color
+from random import randint, randrange
+from colors import Colors, get_color, POINT_DISTANCE
 from vector import Vector
 from ai     import *
 
@@ -23,6 +23,8 @@ class Triangle:
 				 (position + self.vertices[1]).to_touple(),
 				 (position + self.vertices[2]).to_touple()]
 
+	def get_verticle(self, id, position):
+		return (position + self.vertices[id]).to_touple()
 
 class EnemyRotateBehavior:
 
@@ -60,7 +62,7 @@ class EnemyRotateBehavior:
 		self.rotation_change = change
 
 class Enemy2:
-	THICKNESS = 2
+	THICKNESS = 4
 	RADIUS    = 9
 	COLOR     = get_color(Colors.LIGHT_BLUE)
 
@@ -88,7 +90,7 @@ class Enemy2:
 
 	hp           = 100
 	hp_max       = 100
-	armour       = 0
+	armour       = 100
 	ammo_railgun = 100
 	ammo_bazooka = 100
 
@@ -98,11 +100,17 @@ class Enemy2:
 	low_hp_color = get_color(Colors.RED)
 	hig_hp_color = get_color(Colors.GREEN)
 
+	need_path   = False
+	destination = Vector(0,0) 
+	path        = []
+
+	scaner      = [[],[]]
+
 	def __init__(self,  screen, screen_size, id):
 		self.draw_railgun     = False
 		self.current_screen   = screen
 		self.screen_size      = screen_size
-		self.current_position = Vector(randint(0,self.screen_size.x), randint(0,self.screen_size.y))
+		self.current_position = Vector(randrange(0,self.screen_size.x, POINT_DISTANCE), randrange(0,self.screen_size.y, POINT_DISTANCE))
 		self.previous_position= self.current_position
 		
 		self.destination      = self.current_position
@@ -124,6 +132,8 @@ class Enemy2:
 		self.triggered         = False
 		self.visible		   = True
 		self.is_dead           = False
+
+		self.look_at           = Vector(0,0)
 
 	def check_intersection(self, shoot_from, shoot_to):
 		v_shoot = shoot_to - shoot_from
@@ -155,11 +165,14 @@ class Enemy2:
 				self.is_dead = True
 
 	def bazooka_shot(self):
-		rise_event( Events.SHOOT2, {  "atack_type" : "Baz",  "fro" : self.current_position + self.velocity.norm() * 10, "direction" : self.velocity })
+		rise_event( Events.SHOOT2, {  "atack_type" : "Baz",  "fro" : self.current_position + self.velocity.norm() * 15, "direction" : self.velocity })
+		self.ammo_bazooka -= 20
 
 	def railgun_shot(self):
+		if self.draw_railgun : return 
 		self.railgun_to = self.current_position + ( self.velocity.norm() * 400 )
-		rise_event( Events.SHOOT2, {  "atack_type" : "Rai", "enemy_id" : self.id,  "fro" : self.current_position + self.velocity.norm()* 10, "to" : self.current_position + ( self.velocity.norm() * 400 ) })
+		rise_event( Events.SHOOT2, {  "atack_type" : "Rai", "enemy_id" : self.id,  "fro" : self.current_position + self.velocity.norm()* 15, "to" : self.current_position + ( self.velocity.norm() * 400 ) })
+		self.ammo_railgun -= 50
 
 	def update(self,delta):
 		if self.hp < 0: self.is_dead = True
@@ -167,15 +180,23 @@ class Enemy2:
 		self.previous_position = self.current_position	
 		self.current_position += self.velocity * delta
 		self.handle_rotation()
-	#	if randint(0, 100) == 3 : self.bazooka_shot()
-		if not self.draw_railgun: self.railgun_shot()
+	#	if randint(0, 100) == 3  and                           self.ammo_bazooka > 0 : self.bazooka_shot()
+	#	if randint(0, 100) == 12 and not self.draw_railgun and self.ammo_railgun > 0: self.railgun_shot()
 	
+	def add_statistic(self, tab):
+		if tab[0] == "HP": 
+			self.hp += tab[1]
+			if self.hp > self.hp_max : self.hp = self.hp_max
+		if tab[0] == "AA":  self.armour += tab[1]
+		if tab[0] == "AB":  self.ammo_bazooka += tab[1]
+		if tab[0] == "AR":  self.ammo_railgun += tab[1]
+			
 	def set_to_railgun( self, point):
 		self.railgun_to = point
 		self.draw_railgun = True
 
 	def handle_rotation(self):
-		self.rotate_behaviour.update_position(self.current_position, self.velocity)
+		self.rotate_behaviour.update_position(self.current_position, self.look_at)
 		if self.rotate_behaviour.get_rotation_change() :
 			self.representation.rotate(self.rotate_behaviour.get_rotation_angle())
 
@@ -185,16 +206,12 @@ class Enemy2:
 			
 		if self.armour < 0 : self.armour = 0
 
-		
-
 		percent = (self.hp if self.hp > 0 else 0) / self.hp_max
+		if percent > 1 : percent = 1
 
 		self.COLOR = (  self.low_hp_color[0] * (1 - percent) + self.hig_hp_color[0] * percent, 
 						self.low_hp_color[1] * (1 - percent) + self.hig_hp_color[1] * percent,
 						self.low_hp_color[2] * (1 - percent) + self.hig_hp_color[2] * percent )
-
-		self.armour = self.armour + 0.1
-
 
 	def get_ammo(self):
 		return [ self.ammo_railgun, self.ammo_bazooka ]
@@ -214,16 +231,27 @@ class Enemy2:
 			return
 
 	def draw(self):
-		pygame.draw.line(self.current_screen, get_color(Colors.KHAKI) ,self.current_position.to_table(), ( self.current_position + (self.velocity.norm() * 50 ) ).to_table() , 2 )
+		pygame.draw.line(self.current_screen, get_color(Colors.CRIMSON) ,self.current_position.to_table(), ( self.current_position + (self.velocity.norm() * 50 ) ).to_table() , 2 )
 		if self.draw_railgun : 
-			pygame.draw.line(self.current_screen, get_color(Colors.RED) , (self.current_position + (self.velocity.norm() * 5 )).to_table(), ( self.railgun_to ).to_table() , 2 )
+			pygame.draw.line(self.current_screen, get_color(Colors.DARK_VIOLET) , (self.current_position + (self.velocity.norm() * 5 )).to_table(), ( self.railgun_to ).to_table() , 2 )
 			self.draw_railgun = False
 
-		pygame.draw.circle(self.current_screen, get_color(Colors.RED), self.current_position.to_table(), 400, 1 )
+		pygame.draw.circle(self.current_screen, get_color(Colors.BLUE), self.current_position.to_table(), 250, 1 )
 
+		for p in range( len(self.path) - 1 ):
+			pygame.draw.line(self.current_screen, get_color(Colors.DARK_VIOLET) , (self.path[p]).to_table(), ( self.path[p+1] ).to_table() , 2 )
+
+
+#		self.armour += 1
 		if self.visible and not self.is_dead and not self.triggered :
-			pygame.draw.polygon(self.current_screen,  get_color(Colors.BLACK), self.representation.to_draw(self.current_position), int( 5 * self.armour / 1000) )
+			#ARMOUR
+			pygame.draw.circle(self.current_screen, get_color(Colors.WHITE), self.current_position.to_table(), int( 10 * self.armour / 100) )
+			#BODY
 			pygame.draw.polygon(self.current_screen, self.COLOR, self.representation.to_draw(self.current_position), self.THICKNESS )
+			#BAZZOKA
+			pygame.draw.circle(self.current_screen, get_color(Colors.GOLD), self.representation.get_verticle(1, self.current_position), int(4 * self.ammo_bazooka/100) )
+			#RAILGUN
+			pygame.draw.circle(self.current_screen, get_color(Colors.DARK_VIOLET), self.representation.get_verticle(2, self.current_position), int(4 * self.ammo_railgun/100) )
 		elif not self.visible:
 			pass
 	#		pygame.draw.circle(self.current_screen, get_color(Colors.DARK_YELLOW), self.current_position.to_table(), self.RADIUS, self.THICKNESS )
