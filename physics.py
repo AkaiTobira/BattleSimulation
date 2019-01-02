@@ -47,7 +47,7 @@ class UnitManager:
 				units[0][unit].current_position = self.graph.get_random_node().position		
 
 
-		for i in range(20):
+		for i in range(10000):
 			v = Vector(randint(0,1024),randint(0,720))
 			print( self.graph.get_closeset_node( v ).position , v )
 			self.liseee.append( [ self.graph.get_closeset_node( v ).position , v ])

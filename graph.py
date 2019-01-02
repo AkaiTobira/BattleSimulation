@@ -124,9 +124,9 @@ class Graph:
     def get_path(self, c_pos, d_pos):
     
 
-        start_pos = Vector( int(c_pos.x/POINT_DISTANCE), int(c_pos.y/POINT_DISTANCE) )
-        end_pos   = Vector( int(d_pos.x/POINT_DISTANCE), int(d_pos.y/POINT_DISTANCE) )
-
+        start_pos = self.get_closeset_node(c_pos).position/POINT_DISTANCE
+        #Vector( int(c_pos.x/POINT_DISTANCE), int(c_pos.y/POINT_DISTANCE) )
+        end_pos   = self.get_closeset_node(d_pos).position
     #    print( c_pos, d_pos, start_pos, end_pos)
 
         openQue = PriorityQueue()
