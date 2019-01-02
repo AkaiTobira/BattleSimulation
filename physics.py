@@ -24,9 +24,6 @@ class UnitManager:
 	duration       = 0
 	items_list    = []
 	path = []
-
-	liseee = []
-	
 	
 	def __init__(self, units,  screen,screen_size):
 		self.enemy_list       = units[0]
@@ -46,12 +43,6 @@ class UnitManager:
 			while self.graph.get_node( int(units[0][unit].current_position.x/POINT_DISTANCE), int(units[0][unit].current_position.y/POINT_DISTANCE) ) == None:
 				units[0][unit].current_position = self.graph.get_random_node().position		
 
-
-		for i in range(10000):
-			v = Vector(randint(0,1024),randint(0,720))
-			print( self.graph.get_closeset_node( v ).position , v )
-			self.liseee.append( [ self.graph.get_closeset_node( v ).position , v ])
-
 		self.mv_system        = MoveSystem(units)
 		self.cl_system        = CollisionSystem(units, screen_size)
 
@@ -64,16 +55,8 @@ class UnitManager:
 		for item in self.items_list:
 			item.draw()
 
-		self.graph.draw(self.screen)
+	#	self.graph.draw(self.screen)
 		
-		for i in self.liseee:
-			pygame.draw.line(self.screen, get_color(Colors.BLUE_BAR) , i[0].to_table(), i[1].to_table() , 2 )
-			pygame.draw.circle(self.screen, get_color(Colors.BLACK), i[0].to_table(), 4, 1)
-
-
-
-
-
 	def get_enemy(self, l_id):
 		for enemy in self.enemy_list:
 			if l_id == enemy.id: return enemy 
@@ -94,7 +77,7 @@ class UnitManager:
 				for enemy in self.enemy_list:
 					if event.enemy_id == enemy.id : continue
 					if enemy.check_intersection( event.fro, point ):
-						enemy.get_hit(None, 100)
+						enemy.get_hit(None, 67)
 				return
 
 		if event.type == Events.COLLIDE:
@@ -158,10 +141,10 @@ class UnitManager:
 				in_range_enemies.append(enemy2)	
 		return in_range_enemies
 
-
 	def process_path_need(self, enemy):
 		if enemy.need_path : 
 			enemy.path = self.graph.get_path(enemy.current_position, enemy.destination)
+		#	print( enemy.path, enemy.current_position, enemy.destination)
 			if len(enemy.path) != 0: enemy.need_path = False
 
 	def process_physics(self,delta):

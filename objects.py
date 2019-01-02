@@ -54,7 +54,7 @@ class ItemHp(Item):
 
 class ItemArmour(Item):
     COLOR = Colors.WHITE
-    addings = [ "AA", 50 ]
+    addings = [ "AA", 15 ]
 
     def draw(self):
         pygame.draw.circle(self.screen, get_color(self.COLOR), self.current_position.to_table(), 5 )
@@ -101,7 +101,7 @@ class BazookaMissle:
     exist            = True
     explode          = False
     is_missle        = True 
-    dmg              = 75
+    dmg              = 45
     addings          = [ "BZ", 0 ]
 
     def __init__( self, screen, position, direction):
@@ -138,7 +138,7 @@ class BazookaMissle:
 
     def update(self, delta):
         if not self.explode : 
-            self.current_position += self.direction * 200 * delta 
+            self.current_position += self.direction * 133 * delta 
             self.time_out()
         else:
             self.RADIUS = int((( time.time() - self.initializated ) / 0.50 ) * 100) 

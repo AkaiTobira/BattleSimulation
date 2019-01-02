@@ -122,12 +122,11 @@ class Graph:
         
 
     def get_path(self, c_pos, d_pos):
-    
 
         start_pos = self.get_closeset_node(c_pos).position/POINT_DISTANCE
-        #Vector( int(c_pos.x/POINT_DISTANCE), int(c_pos.y/POINT_DISTANCE) )
         end_pos   = self.get_closeset_node(d_pos).position
-    #    print( c_pos, d_pos, start_pos, end_pos)
+
+    #    print( "ASTAR : Finding Path beetween : ", start_pos, start_pos*POINT_DISTANCE, " : ", end_pos/POINT_DISTANCE, end_pos )
 
         openQue = PriorityQueue()
         closedSet = {}
@@ -138,21 +137,25 @@ class Graph:
 
         if self.nodes[int(start_pos.x)][int(start_pos.y)] == None: return []
 
+        number = 0
+
         while( not openQue.empty() ):
             s = openQue.get()[1]
             closedSet[s][2] = True  # add to closedSet
             closedSet[s][3] = False # remove form openset
-            
-            if s.position == d_pos: 
+
+            if s.position == end_pos: 
                 t = []
                 k = s
                 while not closedSet[k][1] == None:
                     t.append(k.position)
                     k = closedSet[k][1]
+                t.append(k.position)
                 t.reverse()
-        #        print( len(closedSet), len(t) )
                 self.serc = closedSet
                 return t
+
+            number += 1
 
             for n in s.neighbours:
                 tgs = closedSet[s][0] + self.__distance(n, s.position)
@@ -178,6 +181,7 @@ class Graph:
                     #        openQue.put( (p, neighbour) )
 
 #            closedSet[n[1]][2] = True
+    #    print( " PATH NOT FOUND ", number, " ELEMENETS CHANGED ")
         return []
 
     def __distance(self, n, pos):

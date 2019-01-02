@@ -6,7 +6,7 @@ from game     import Game
  
 def main():
 
-	game = Game((1024,720), "Zombie2D")
+	game = Game((1024,720), "Shoter2D")
 	clock = pygame.time.Clock()
 
 	while game.is_running():

@@ -1,4 +1,3 @@
-
 from enum import Enum
 
 POINT_DISTANCE = 25

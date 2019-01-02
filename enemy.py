@@ -164,24 +164,21 @@ class Enemy2:
 			if point is not None:
 				self.is_dead = True
 
-	def bazooka_shot(self):
-		rise_event( Events.SHOOT2, {  "atack_type" : "Baz",  "fro" : self.current_position + self.velocity.norm() * 15, "direction" : self.velocity })
-		self.ammo_bazooka -= 20
+	def bazooka_shot(self, direction):
+		rise_event( Events.SHOOT2, {  "atack_type" : "Baz",  "fro" : self.current_position + direction.norm() * 15, "direction" : direction * self.velocity.len() })
+		self.ammo_bazooka -= 10
 
-	def railgun_shot(self):
+	def railgun_shot(self, direction):
 		if self.draw_railgun : return 
-		self.railgun_to = self.current_position + ( self.velocity.norm() * 400 )
-		rise_event( Events.SHOOT2, {  "atack_type" : "Rai", "enemy_id" : self.id,  "fro" : self.current_position + self.velocity.norm()* 15, "to" : self.current_position + ( self.velocity.norm() * 400 ) })
-		self.ammo_railgun -= 50
+		self.railgun_to = self.current_position + ( direction.norm() * 400 )
+		rise_event( Events.SHOOT2, {  "atack_type" : "Rai", "enemy_id" : self.id,  "fro" : self.current_position + direction.norm()* 15, "to" : self.current_position + ( direction.norm() * 400 ) })
+		self.ammo_railgun -= 30
 
 	def update(self,delta):
 		if self.hp < 0: self.is_dead = True
-
 		self.previous_position = self.current_position	
 		self.current_position += self.velocity * delta
 		self.handle_rotation()
-	#	if randint(0, 100) == 3  and                           self.ammo_bazooka > 0 : self.bazooka_shot()
-	#	if randint(0, 100) == 12 and not self.draw_railgun and self.ammo_railgun > 0: self.railgun_shot()
 	
 	def add_statistic(self, tab):
 		if tab[0] == "HP": 
@@ -190,6 +187,13 @@ class Enemy2:
 		if tab[0] == "AA":  self.armour += tab[1]
 		if tab[0] == "AB":  self.ammo_bazooka += tab[1]
 		if tab[0] == "AR":  self.ammo_railgun += tab[1]
+
+		percent = (self.hp if self.hp > 0 else 0) / self.hp_max
+		if percent > 1 : percent = 1
+
+		self.COLOR = (  self.low_hp_color[0] * (1 - percent) + self.hig_hp_color[0] * percent, 
+						self.low_hp_color[1] * (1 - percent) + self.hig_hp_color[1] * percent,
+						self.low_hp_color[2] * (1 - percent) + self.hig_hp_color[2] * percent )
 			
 	def set_to_railgun( self, point):
 		self.railgun_to = point
@@ -238,8 +242,18 @@ class Enemy2:
 
 		pygame.draw.circle(self.current_screen, get_color(Colors.BLUE), self.current_position.to_table(), 250, 1 )
 
+
+		pygame.draw.line(self.current_screen, get_color(Colors.KHAKI) ,self.current_position.to_table(), ( self.destination ).to_table() , 2 )
+
+
 		for p in range( len(self.path) - 1 ):
 			pygame.draw.line(self.current_screen, get_color(Colors.DARK_VIOLET) , (self.path[p]).to_table(), ( self.path[p+1] ).to_table() , 2 )
+
+		font = pygame.font.SysFont("consolas", int(10) )
+		text = font.render( str(self.ammo_bazooka) + " : " + str(self.ammo_railgun) + " \n " +  self.ai.current_state.state , True, self.COLOR)
+		text_rect = text.get_rect(center=(self.current_position.x, self.current_position.y - 20))
+		self.current_screen.blit(text, text_rect)
+
 
 
 #		self.armour += 1

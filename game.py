@@ -9,8 +9,8 @@ from colors    import Colors, get_color
 #from hud       import HUD
 
 
-NUMBER_OF_ENEMIES   = 4
-NUMBER_OF_OBSTACLES = 20
+NUMBER_OF_ENEMIES   = 5
+NUMBER_OF_OBSTACLES = 16
 
 START_POSITION      = Vector(512,360)
 
@@ -106,7 +106,7 @@ class StateOver(Stete):
 			screen,
 			get_color(Colors.WHITE),
 			40,
-			"PLAYER " + str(id) + " WON",
+			"PLAYER " + str(self.win_id) + " WON",
 			START_POSITION
 		)
 

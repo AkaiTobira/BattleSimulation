@@ -9,8 +9,8 @@ class Vector:
 		self.x = x
 		self.y = y
 		
-	def __rep__(self):
-		return self.__str__
+	def __repr__(self):
+		return "[" + str(self.x) + "," + str(self.y) + "]" 
 	
 	def __add__(self, vec):
 		return Vector(self.x + vec.x, self.y + vec.y)
@@ -100,7 +100,7 @@ class Vector:
 	def to_local_space(self,v):
 		angle = self.angle_between(Vector(self.x,0))
 		return Vector(  (v.x-self.x) * math.cos(angle) + (v.y-self.y)* math.sin(angle),
-					-(v.x-self.x) * math.sin(angle) + (v.y-self.y)* math.cos(angle))
+					   -(v.x-self.x) * math.sin(angle) + (v.y-self.y)* math.cos(angle))
     
 	def to_global_space(self, v):
 		angle = self.angle_between(Vector(self.x,0))

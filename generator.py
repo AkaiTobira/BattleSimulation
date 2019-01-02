@@ -36,8 +36,8 @@ class ObjectsGenerator:
 			self.id_counter += 1
 		
 	def create_objects(self):
-		self.generate_obstacles()
 		self.generate_enemy()
+		self.generate_obstacles()
 		return [ self.enemy_list, self.obstacle_list ]
 		
 
