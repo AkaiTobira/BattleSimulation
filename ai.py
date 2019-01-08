@@ -79,6 +79,29 @@ class State:
             owner.look_at    = (owner.look_at.norm() + ( owner.look_at.norm() + (target.current_position - owner.current_position).norm() ).norm() ).norm()
         else: owner.look_at  = (owner.look_at.norm() + ( owner.look_at.norm() + owner.velocity.norm() ) ).norm()
 
+    def follow_path(self, owner):
+        multipler = 0.6 * ( 1 + (1 - owner.hp/owner.hp_max) ) * ( POINT_DISTANCE-5 )
+
+        if self.state == "CollecRun": multipler =  1.65 * ( POINT_DISTANCE-5 )
+        if len(owner.path) == 0 : return
+
+        dist = owner.current_position.distance_to(owner.path[0])
+        owner.velocity = self.arrival(owner,owner.path[0]).norm() * multipler
+
+        if len(owner.path) == 1 or dist.len() - owner.velocity.len() <= 0: 
+            owner.velocity = owner.velocity.norm() * dist.len()
+            owner.path = owner.path[1:]
+            return 
+
+        dist = owner.current_position.distance_to(owner.path[1])
+
+     #   interpolation = owner.path[0] + (3/dist.len()) * (owner.path[1] - owner.path[0])
+        interpolation  = owner.path[1]
+        owner.velocity = ((interpolation- owner.current_position).norm() * owner.max_speed- owner.velocity).norm() * multipler
+        if dist.len() - owner.velocity.len() <= 0:
+            owner.velocity = owner.velocity.norm() * dist.len()
+            owner.path = owner.path[1:] 
+        
     def __eq__(self,state):
         return state == self.state
 
@@ -176,10 +199,11 @@ class StateWander(State):
     start = 0
     duration = 0
     max_stering_force = Vector(22,22)
-
+    current_hp = 0
     def enter(self, owner):
         self.start = time.time()
         self.duration = randint(2, 4)
+        self.current_hp = owner.hp
         pass
 
 
@@ -191,14 +215,9 @@ class StateWander(State):
             owner.need_path = True
             owner.destination = Vector( randint
             (0,50) * POINT_DISTANCE, randint(0,40)* POINT_DISTANCE)
-            owner.ai.change_state( StateCollect() )
-
+            
         else:
-            dist = owner.current_position.distance_to(owner.path[0])
-            owner.velocity = self.arrival(owner,owner.path[0]).norm() * ( POINT_DISTANCE-5 )
-            if dist.len() - owner.velocity.len() <= 0: 
-                owner.velocity = owner.velocity.norm() * dist.len()
-                owner.path = owner.path[1:] 
+            self.follow_path(owner)
 
     def have_in_space(self,owner, kind):
         for i in owner.scaner[1]:
@@ -215,42 +234,49 @@ class StateWander(State):
             owner.ai.change_state( StateAtack() )
             owner.path = owner.path[:1]
 
-        
+        if len(owner.scaner[1]) > 0 and randint(0,1000) < 30 and len(owner.scaner[0]) == 0:
+            owner.ai.change_state( StateCollect() )
+
+        #if self.current_hp != owner.hp :
+           # if len(owner.scaner[0]) > 0 and owner.hp > 30 and (( owner.ammo_bazooka > 15) or (owner.ammo_railgun > 50)):
+          #      owner.ai.change_state( StateAtack() )
+          #      owner.path = owner.path[:1]
+         #   else:
+        #        owner.ai.change_state( StateRun() )
+          #      owner.path = owner.path[:1]
+                
+            
 
         pass
 
 class StateRun(State):
     state = "CollecRun"
 
-    start = False
+    start = 0
 
     def enter(self, owner):
         owner.need_path = True
         owner.destination =  owner.current_position - (( owner.scaner[0][0].current_position - owner.current_position ).norm() * 300 )
 
-        self.start = False
+        self.start = time.time()
         pass
 
     def exit(self, owner):
         pass
 
     def path_realizer(self,owner):
-        if len(owner.path) <= 0  and self.start:
+        if len(owner.path) <= 0 :
             owner.ai.change_state( StateCollect() )
         else:
-            dist = owner.current_position.distance_to(owner.path[0])
-            owner.velocity = self.arrival(owner,owner.path[0]).norm() * ( POINT_DISTANCE + 10 )
-            if dist.len() - owner.velocity.len() < 0: 
-                owner.velocity = owner.velocity.norm() * dist.len()
-                owner.path = owner.path[1:] 
-            self.start = True
+            self.follow_path(owner)
+#            self.start = True
 
     destination = None
     currently_collecting = None   
 
     def execute(self, owner):
 
-        if not self.has_enemy(owner): owner.ai.change_state( StateCollect() )
+        if not self.has_enemy(owner) and  time.time() - self.start > 1 : owner.ai.change_state( StateCollect() )
 
         self.path_realizer(owner)
         self.look_at(owner, None)
@@ -273,15 +299,11 @@ class StateCollectArmour(State):
         pass
 
     def path_realizer(self,owner):
-        if len(owner.path) <= 0  and self.start:
+        if len(owner.path) <= 0 :# and self.start:
             owner.ai.change_state( StateWander() )
         else:
-            dist = owner.current_position.distance_to(owner.path[0])
-            owner.velocity = self.arrival(owner,owner.path[0]).norm() * ( POINT_DISTANCE-5 )
-            if dist.len() - owner.velocity.len() < 0: 
-                owner.velocity = owner.velocity.norm() * dist.len()
-                owner.path = owner.path[1:] 
-            self.start = True
+            self.follow_path(owner)
+        #    self.start = True
 
     destination = None
     currently_collecting = None   
@@ -311,15 +333,11 @@ class StateCollectAmmoBazooka(State):
         pass
 
     def path_realizer(self,owner):
-        if len(owner.path) <= 0  and self.start:
+        if len(owner.path) <= 0 :# and self.start:
             owner.ai.change_state( StateWander() )
         else:
-            dist = owner.current_position.distance_to(owner.path[0])
-            owner.velocity = self.arrival(owner,owner.path[0]).norm() * ( POINT_DISTANCE-5 )
-            if dist.len() - owner.velocity.len() < 0: 
-                owner.velocity = owner.velocity.norm() * dist.len()
-                owner.path = owner.path[1:] 
-            self.start = True
+            self.follow_path(owner)
+        #    self.start = True
 
     destination = None
     currently_collecting = None   
@@ -349,15 +367,11 @@ class StateCollectHP(State):
         pass
 
     def path_realizer(self,owner):
-        if len(owner.path) <= 0  and self.start:
+        if len(owner.path) <= 0:#  and self.start:
             owner.ai.change_state( StateWander() )
         else:
-            dist = owner.current_position.distance_to(owner.path[0])
-            owner.velocity = self.arrival(owner,owner.path[0]).norm() * ( POINT_DISTANCE-5 )
-            if dist.len() - owner.velocity.len() < 0: 
-                owner.velocity = owner.velocity.norm() * dist.len()
-                owner.path = owner.path[1:] 
-            self.start = True
+            self.follow_path(owner)
+        #    self.start = True
 
     destination = None
     currently_collecting = None   
@@ -387,15 +401,11 @@ class StateCollectAmmoRailgun(State):
         pass
 
     def path_realizer(self,owner):
-        if len(owner.path) <= 0  and self.start:
+        if len(owner.path) <= 0: # and self.start:
             owner.ai.change_state( StateWander() )
         else:
-            dist = owner.current_position.distance_to(owner.path[0])
-            owner.velocity = self.arrival(owner,owner.path[0]).norm() * ( POINT_DISTANCE-5 )
-            if dist.len() - owner.velocity.len() < 0: 
-                owner.velocity = owner.velocity.norm() * dist.len()
-                owner.path = owner.path[1:] 
-            self.start = True
+            self.follow_path(owner)
+        #    self.start = True
 
     destination = None
     currently_collecting = None   
@@ -425,15 +435,11 @@ class StateCollectEverything(State):
         pass
 
     def path_realizer(self,owner):
-        if len(owner.path) <= 0  and self.start:
+        if len(owner.path) <= 0:#  and self.start:
             owner.ai.change_state( StateWander() )
         else:
-            dist = owner.current_position.distance_to(owner.path[0])
-            owner.velocity = self.arrival(owner,owner.path[0]).norm() * ( POINT_DISTANCE-5 )
-            if dist.len() - owner.velocity.len() < 0: 
-                owner.velocity = owner.velocity.norm() * dist.len()
-                owner.path = owner.path[1:] 
-            self.start = True
+            self.follow_path(owner)
+        #    self.start = True
 
     destination = None
     currently_collecting = None   
@@ -515,11 +521,8 @@ class StateAtack(State):
             owner.destination  = Vector( self.currently_collecting.current_position.x + randint(-3,3)*POINT_DISTANCE,
                                          self.currently_collecting.current_position.y + randint(-3,3)*POINT_DISTANCE)
         else:
-            dist = owner.current_position.distance_to(owner.path[0])
-            owner.velocity = self.arrival(owner,owner.path[0]).norm() * ( POINT_DISTANCE-5 )
-            if dist.len() - owner.velocity.len() <= 0: 
-                owner.velocity = owner.velocity.norm() * dist.len()
-                owner.path = owner.path[1:] 
+            self.follow_path(owner)
+
 
 
     destination          = None
@@ -532,7 +535,7 @@ class StateAtack(State):
         return False
 
 
-    time_out_railgun = 5
+    time_out_railgun = randint(3,5)
     time_out_bazooka = 2
     shoot_railgun    = 0
     shoot_bazooka    = 0
@@ -547,18 +550,20 @@ class StateAtack(State):
             if owner.ammo_railgun > 30 and  time.time() - self.shoot_railgun > self.time_out_railgun : 
                 owner.railgun_shot(self.currently_collecting.current_position - owner.current_position + Vector( uniform( -15, 15 ), uniform( -15, 15 )))
                 self.shoot_railgun = time.time()
+                self.time_out_railgun = randint(3,5)
 
     def execute(self, owner):
 
         if not self.has_enemy(owner)  : owner.ai.change_state( StateWander()  )
         if self.has_enemy(owner) and ( not self.have_ammo(owner) or owner.hp <= 30 ) : owner.ai.change_state( StateRun()     )
 
-        
-
         self.path_realizer(owner)
         self.look_at(owner, self.currently_collecting)
         
         if self.currently_collecting == None: return
+
+        if self.currently_collecting.hp < 0: owner.ai.change_state(StateWander() )
+
 
         self.launch_railgun(owner)
         self.launch_bazooka(owner)

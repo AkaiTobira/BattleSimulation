@@ -106,7 +106,7 @@ class Enemy2:
 
 	scaner      = [[],[]]
 
-	def __init__(self,  screen, screen_size, id):
+	def __init__(self,  screen, screen_size, m_id):
 		self.draw_railgun     = False
 		self.current_screen   = screen
 		self.screen_size      = screen_size
@@ -114,7 +114,7 @@ class Enemy2:
 		self.previous_position= self.current_position
 		
 		self.destination      = self.current_position
-		self.id               = id
+		self.m_id               = m_id
 		
 		self.distance         = Vector(0.0,0.0)
 		self.accumulate       = Vector(0.0,0.0)
@@ -171,8 +171,9 @@ class Enemy2:
 	def railgun_shot(self, direction):
 		if self.draw_railgun : return 
 		self.railgun_to = self.current_position + ( direction.norm() * 400 )
-		rise_event( Events.SHOOT2, {  "atack_type" : "Rai", "enemy_id" : self.id,  "fro" : self.current_position + direction.norm()* 15, "to" : self.current_position + ( direction.norm() * 400 ) })
+		rise_event( Events.SHOOT2, {  "atack_type" : "Rai", "enemy_id" : self.m_id,  "fro" : self.current_position + direction.norm()* 15, "to" : self.current_position + ( direction.norm() * 400 ) })
 		self.ammo_railgun -= 30
+		self.railgun_time_to_draw = time.time()
 
 	def update(self,delta):
 		if self.hp < 0: self.is_dead = True
@@ -238,21 +239,27 @@ class Enemy2:
 		pygame.draw.line(self.current_screen, get_color(Colors.CRIMSON) ,self.current_position.to_table(), ( self.current_position + (self.velocity.norm() * 50 ) ).to_table() , 2 )
 		if self.draw_railgun : 
 			pygame.draw.line(self.current_screen, get_color(Colors.DARK_VIOLET) , (self.current_position + (self.velocity.norm() * 5 )).to_table(), ( self.railgun_to ).to_table() , 2 )
-			self.draw_railgun = False
+			if time.time() - self.railgun_time_to_draw > 0.67:
+				self.draw_railgun = False
 
-		pygame.draw.circle(self.current_screen, get_color(Colors.BLUE), self.current_position.to_table(), 250, 1 )
-
-
-		pygame.draw.line(self.current_screen, get_color(Colors.KHAKI) ,self.current_position.to_table(), ( self.destination ).to_table() , 2 )
+	#	pygame.draw.circle(self.current_screen, get_color(Colors.BLUE), self.current_position.to_table(), 250, 1 )
 
 
-		for p in range( len(self.path) - 1 ):
-			pygame.draw.line(self.current_screen, get_color(Colors.DARK_VIOLET) , (self.path[p]).to_table(), ( self.path[p+1] ).to_table() , 2 )
+	#	pygame.draw.line(self.current_screen, get_color(Colors.KHAKI) ,self.current_position.to_table(), ( self.destination ).to_table() , 2 )
+
+
+	#	for p in range( len(self.path) - 1 ):
+	#		pygame.draw.line(self.current_screen, get_color(Colors.ORANGERED) , (self.path[p]).to_table(), ( self.path[p+1] ).to_table() , 2 )
 
 		font = pygame.font.SysFont("consolas", int(10) )
 		text = font.render( str(self.ammo_bazooka) + " : " + str(self.ammo_railgun) + " \n " +  self.ai.current_state.state , True, self.COLOR)
 		text_rect = text.get_rect(center=(self.current_position.x, self.current_position.y - 20))
 		self.current_screen.blit(text, text_rect)
+
+		text = font.render( str(self.m_id) , True, get_color(Colors.YELLOW))
+		text_rect = text.get_rect(center=(self.current_position.x, self.current_position.y - 40))
+		self.current_screen.blit(text, text_rect)
+
 
 
 
@@ -263,9 +270,9 @@ class Enemy2:
 			#BODY
 			pygame.draw.polygon(self.current_screen, self.COLOR, self.representation.to_draw(self.current_position), self.THICKNESS )
 			#BAZZOKA
-			pygame.draw.circle(self.current_screen, get_color(Colors.GOLD), self.representation.get_verticle(1, self.current_position), int(4 * self.ammo_bazooka/100) )
+			pygame.draw.circle(self.current_screen, get_color(Colors.GOLD), self.representation.get_verticle(1, self.current_position), int(0.50 * self.ammo_bazooka/10) )
 			#RAILGUN
-			pygame.draw.circle(self.current_screen, get_color(Colors.DARK_VIOLET), self.representation.get_verticle(2, self.current_position), int(4 * self.ammo_railgun/100) )
+			pygame.draw.circle(self.current_screen, get_color(Colors.DARK_VIOLET), self.representation.get_verticle(2, self.current_position), int(1 * self.ammo_railgun/30) )
 		elif not self.visible:
 			pass
 	#		pygame.draw.circle(self.current_screen, get_color(Colors.DARK_YELLOW), self.current_position.to_table(), self.RADIUS, self.THICKNESS )

@@ -57,6 +57,8 @@ class Obstacle:
 	COLOR_OUT 		 = get_color(Colors.LIGHT_PURPLE)
 	THICK  			 = 2
 
+
+	is_dead          = False
 	id 			 	 = -1
 	state 			 = "Const"
 

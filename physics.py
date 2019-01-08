@@ -28,6 +28,7 @@ class UnitManager:
 	def __init__(self, units,  screen,screen_size):
 		self.enemy_list       = units[0]
 		self.obstacle_list    = units[1]
+		self.items_list       = []
 		self.zombie_counter   = len(self.enemy_list)
 		self.screen           = screen
 		self.graph            = Graph(int(1024/POINT_DISTANCE) + 2,int(720/POINT_DISTANCE) + 2)
@@ -38,10 +39,8 @@ class UnitManager:
 			self.graph.remove_nodes( obst.get_covered_space() )
 		self.graph.generate_neighbour_net()
 
-
 		for unit in range(len(units[0])):
-			while self.graph.get_node( int(units[0][unit].current_position.x/POINT_DISTANCE), int(units[0][unit].current_position.y/POINT_DISTANCE) ) == None:
-				units[0][unit].current_position = self.graph.get_random_node().position		
+			units[0][unit].current_position = self.graph.get_closeset_node( Vector( randint(0, 1024), randint(0, 720) )).position
 
 		self.mv_system        = MoveSystem(units)
 		self.cl_system        = CollisionSystem(units, screen_size)
@@ -59,7 +58,7 @@ class UnitManager:
 		
 	def get_enemy(self, l_id):
 		for enemy in self.enemy_list:
-			if l_id == enemy.id: return enemy 
+			if l_id == enemy.m_id: return enemy 
 
 	def process_input(self,event):
 	
@@ -75,7 +74,8 @@ class UnitManager:
 					if point_condidate.distance_to(event.fro).len() < point.distance_to(event.fro).len() : point = point_condidate
 				self.get_enemy(event.enemy_id).set_to_railgun(point)
 				for enemy in self.enemy_list:
-					if event.enemy_id == enemy.id : continue
+					if event.enemy_id == enemy.m_id : continue
+					if enemy.is_dead              : continue
 					if enemy.check_intersection( event.fro, point ):
 						enemy.get_hit(None, 67)
 				return
@@ -160,7 +160,7 @@ class UnitManager:
 			self.process_path_need(enemy)
 
 			if enemy.is_dead: 
-				print( "PLayer " + str(enemy.id) + " eliminated" )
+				print( "PLayer " + str(enemy.m_id) + " eliminated" )
 				self.enemy_list.remove(enemy)
 		
 		for item in self.items_list:
@@ -225,7 +225,7 @@ class MoveSystem:
 			enemy.ai.update(delta)
 			enemy.update(delta)
 			if enemy.is_dead: 
-				print( "PLayer " + str(enemy.id) + " eliminated" )
+				print( "PLayer " + str(enemy.m_id) + " eliminated" )
 				self.enemy_list.remove(enemy)
 
 	#	self.player.update(delta)
@@ -269,6 +269,7 @@ class CollisionSystem:
 	def missle_impact(self, missle):
 		for obj in self.whole_objcts:
 			if obj.is_in_obstacle(missle.current_position):
+				if obj.is_dead : continue
 #			if missle.current_position.distance_to(obj.current_position).len() < obj.RADIUS:
 				missle.make_explode() 	
 
@@ -277,9 +278,8 @@ class CollisionSystem:
 		for unit in self.enemy_list:
 			self.__select_closest(unit)
 			if unit.is_dead:
-				print( "PLayer " + str(unit.id) + " eliminated" )
+				print( "PLayer " + str(unit.m_id) + " eliminated" )
 				self.enemy_list.remove(unit)
-
 
 	def runaway(self, unit, player):
 		if unit.current_position.distance_to(player.current_position).len() < 150 and not unit.triggered and unit.can_react:

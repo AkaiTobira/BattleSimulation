@@ -48,9 +48,13 @@ class Game:
 
 	def update(self,delta):
 		if self.state.is_simulation_end():
-			id = self.state.unitManager.enemy_list[0] 
+			m_id = -1
+			for enemy in self.state.unitManager.enemy_list: 
+				print( enemy, enemy.m_id )
+				if not enemy.is_dead : m_id = enemy.m_id
 			self.state = StateOver(self.resolution, self.name, self.screen)
-			self.state.set_win_id(id)
+			print( m_id )
+			self.state.set_win_id(m_id)
 		if self.state.restart()          : self.state = StateGame(self.resolution, self.name, self.screen)
 		self.state.update(delta)
 	
@@ -97,8 +101,8 @@ class StateOver(Stete):
 		screen.blit(text, text_rect)
 
 	
-	def set_win_id(self,id):
-		self.win_id = id
+	def set_win_id(self,m_id):
+		self.win_id = m_id
 
 	def draw_label_with_text(self, screen):
 
