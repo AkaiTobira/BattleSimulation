@@ -85,6 +85,7 @@ class Stete:
 
 class StateOver(Stete):
 	state_name   = "WIN"
+	screen  = None
 	
 	win_id = 0
 
@@ -102,6 +103,7 @@ class StateOver(Stete):
 
 	
 	def set_win_id(self,m_id):
+		print(self.win_id, m_id)
 		self.win_id = m_id
 
 	def draw_label_with_text(self, screen):
@@ -124,10 +126,14 @@ class StateOver(Stete):
 
 		pygame.draw.rect(screen, get_color(Colors.LIGHT_BLUE), [150,170,724,420], 2)	
 
+	def draw(self):
+		self.draw_label_with_text(self.screen)
+		pygame.display.flip()
+
 	def __init__(self, resolution, name, screen):
-		
+		self.screen = screen
 		self.fill_screen(screen)
-		self.draw_label_with_text(screen)
+	#	self.draw_label_with_text(screen)
 		pygame.display.flip()
 
 	def process_input(self,event):
