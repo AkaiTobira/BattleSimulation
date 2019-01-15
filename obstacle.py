@@ -71,6 +71,8 @@ class Obstacle:
 	triangle         = None
 	rect             = None
 	covered_space    = None
+
+	points           = None
 	
 	
 	def __init__(self, screen, screen_size, id, obs_list):
@@ -96,6 +98,13 @@ class Obstacle:
 				self.covered_space.append(Vector(x,y))
 
 		self.RADIUS = self.RADIUS/2
+
+		
+		self.points = [ Vector(self.rect.right, self.rect.top   ),
+				   Vector(self.rect.right, self.rect.bottom),
+				   Vector(self.rect.left , self.rect.top   ),
+				   Vector(self.rect.left , self.rect.bottom)
+				 ]
 
 	def is_in_obstacle(self, point):
 		if point.x >= self.rect.right and point.x <= self.rect.left + 1:
@@ -160,24 +169,22 @@ class Obstacle:
 		if dot < 0: return None
 		if v_shoot.len() < v_obs.len(): return None
 
-		points = [ Vector(self.rect.right, self.rect.top   ),
-				   Vector(self.rect.right, self.rect.bottom),
-				   Vector(self.rect.left , self.rect.top   ),
-				   Vector(self.rect.left , self.rect.bottom)
-				 ]
 	# General Equesion of Line
 		A = begin.y - end.y
-		B = end.x - begin.x 
+		B = end.x   - begin.x 
 		C = ( begin.x - end.x)*begin.y + ( end.y - begin.y)*begin.x
-	#
+
 		t = []
-		for p in points:
+		for p in self.points:
 			D = A * p.x + B * p.y + C 
 			if D == 0 : return p
 			t.append( self.__sign(D) )
 
-		if t[0] ==  1 and t[1] ==  1 and t[2] ==  1 and t[3] ==  1: return None
-		if t[0] == -1 and t[1] == -1 and t[2] == -1 and t[3] == -1: return None
+		for i in range( len(self.points) -1 ):
+			if t[i] != 0 or t[i] != t[i+1] : return None
+
+	#	if t[0] ==  1 and t[1] ==  1 and t[2] ==  1 and t[3] ==  1: return None
+	#	if t[0] == -1 and t[1] == -1 and t[2] == -1 and t[3] == -1: return None
 
 		return (v_obs.len() * v_shoot.norm()) + begin 
 
