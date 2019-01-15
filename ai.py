@@ -267,13 +267,13 @@ class StateWander(State):
                 owner.ai.change_state( StateCollect() )
                 return
         
-        if not self.have_ammo(owner) or owner.hp < 50:
-            owner.ai.change_state( StateCollect() )
-            return
-
-        if randint(0,2000) < 10 : 
-            owner.ai.change_state( StateCollect() ) 
-            return
+        if len(owner.scaner[1]) > 0:
+            if not self.have_ammo(owner) or owner.hp < 50:
+                owner.ai.change_state( StateCollect() )
+                return
+            if randint(0,2000) < 50 : 
+                owner.ai.change_state( StateCollect() ) 
+                return
 
 class StateRun(State):
     state = "CollecRun"
@@ -486,8 +486,6 @@ class StateCollect(State):
             owner.ai.change_state( StateWander() )
             return
 
-
-
         owner.need_path = True
         owner.destination =  self.currently_collecting.current_position
         self.start = False
@@ -507,8 +505,8 @@ class StateCollect(State):
 
     def execute(self, owner):
 
-        if owner.hp > 50 and self.have_ammo(owner, True):
-            if self.has_enemy(owner): 
+        if owner.hp > 50:
+            if self.has_enemy(owner) and self.have_ammo(owner, True): 
                 owner.ai.change_state( StateAtack() )
             else:
                 owner.ai.change_state( StateWander() )        
@@ -589,9 +587,10 @@ class StateAtack(State):
                 owner.ai.change_state( StateRun() )
                 return
 
-        if not self.have_ammo(owner):
-            owner.ai.change_state( StateCollect() )
-            return
+        if len(owner.scaner[1]) > 0:
+            if not self.have_ammo(owner):
+                owner.ai.change_state( StateCollect() )
+                return
         #if self.has_enemy(owner) and ( not self.have_ammo(owner) or owner.hp <= 30 ) : 
         #    owner.ai.change_state( StateRun()     )
 
