@@ -31,7 +31,7 @@ class UnitManager:
 		self.items_list       = []
 		self.zombie_counter   = len(self.enemy_list)
 		self.screen           = screen
-		self.graph            = Graph(int(1024/POINT_DISTANCE) + 2,int(720/POINT_DISTANCE) + 2)
+		self.graph            = Graph(int(1200/POINT_DISTANCE) ,int(800/POINT_DISTANCE) )
 		self.duration         = randint(15, 20)
 		self.start            = time.time()
 		

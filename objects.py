@@ -119,9 +119,9 @@ class BazookaMissle:
         self.initializated    = time.time()
 
     def time_out(self):
-        if self.current_position.x < 0 or self.current_position.x > 1024:
-            self.make_explode()
-        if self.current_position.y < 0 or self.current_position.y > 720:
+        if self.current_position.x < 0 or self.current_position.x > 1200:
+            self.make_explode() 
+        if self.current_position.y < 0 or self.current_position.y > 800:
             self.make_explode()
 
         if self.current_position.distance_to(self.spawn_point).len() > 1000:

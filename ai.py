@@ -86,22 +86,44 @@ class State:
         if self.state == "CollecRun": multipler =  1.65 * ( POINT_DISTANCE-5 )
         if len(owner.path) == 0 : return
 
-        dist = owner.current_position.distance_to(owner.path[0])
-        owner.velocity = self.arrival(owner,owner.path[0]).norm() * multipler
-
-        if dist.len() - owner.velocity.len() <= 0: 
-            owner.velocity = owner.velocity.norm() * dist.len()
+        distance = multipler
+        last_point = owner.current_position
+        for index in range(len(owner.path)):
+            distance_between_points = last_point.distance_to(owner.path[0]).len()
+            # the position to move to falls between two points
+            if distance <= distance_between_points and distance >= 0.0:
+                info = self.seek(owner,owner.path[0]).norm() * multipler * distance / distance_between_points
+#                var move_vector = (info-position)*movespeed
+                owner.velocity += info
+                break
+            # the character reached the end of the path
+            elif distance < 0.0:
+                position = owner.path[0]
+    #			set_process(false)
+                break
+            distance -= distance_between_points
+            last_point = owner.path[0]
             owner.path = owner.path[1:]
-            return 
-        return
-        dist = owner.current_position.distance_to(owner.path[1])
+
+
+
+    #    dist = owner.current_position.distance_to(owner.path[0])
+     #   owner.velocity = self.seek(owner,owner.path[0]).norm() * multipler
+
+     #   if dist.len() - owner.velocity.len() <= 0: 
+    #        owner.velocity = owner.velocity.norm() * dist.len()
+    #       owner.path = owner.path[1:]
+    #        return 
+
+    #    dist = owner.current_position.distance_to(owner.path[1])
+    #    owner.velocity = self.seek(owner,owner.path[1]).norm() * multipler
 
      #   interpolation = owner.path[0] + (3/dist.len()) * (owner.path[1] - owner.path[0])
-        interpolation  = owner.path[1]
-        owner.velocity = ((interpolation- owner.current_position).norm() * owner.max_speed- owner.velocity).norm() * multipler
-        if dist.len() - owner.velocity.len() <= 0:
-            owner.velocity = owner.velocity.norm() * dist.len()
-            owner.path = owner.path[1:] 
+    #    interpolation  = owner.path[1]
+    #    owner.velocity = ((interpolation- owner.current_position).norm() * owner.max_speed- owner.velocity).norm() * multipler
+#        if dist.len() - owner.velocity.len() <= 0:
+#            owner.velocity = owner.velocity.norm() * dist.len()
+#            owner.path = owner.path[1:] 
         
     def get_closest_enemy(self, owner):
         close = 99999999
@@ -271,7 +293,7 @@ class StateWander(State):
             if not self.have_ammo(owner) or owner.hp < 50:
                 owner.ai.change_state( StateCollect() )
                 return
-            if randint(0,2000) < 50 : 
+            if randint(0,2000) < 15 : 
                 owner.ai.change_state( StateCollect() ) 
                 return
 
@@ -505,15 +527,11 @@ class StateCollect(State):
 
     def execute(self, owner):
 
-        if owner.hp > 50:
-            if self.has_enemy(owner) and self.have_ammo(owner, True): 
+        if self.has_enemy(owner) :
+            if owner.hp > 50 and self.have_ammo(owner): 
                 owner.ai.change_state( StateAtack() )
-            else:
-                owner.ai.change_state( StateWander() )        
-            return
-
-        if self.has_enemy(owner): 
-            owner.ai.change_state( StateRun() )
+            else:       
+                owner.ai.change_state( StateRun() )
             return
         
         #owner.ai.change_state( StateCollectEverything() )

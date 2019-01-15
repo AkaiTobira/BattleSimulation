@@ -245,11 +245,11 @@ class Enemy2:
 		pygame.draw.circle(self.current_screen, get_color(Colors.BLUE), self.current_position.to_table(), 250, 1 )
 
 
-		pygame.draw.line(self.current_screen, get_color(Colors.KHAKI) ,self.current_position.to_table(), ( self.destination ).to_table() , 2 )
+	#	pygame.draw.line(self.current_screen, get_color(Colors.KHAKI) ,self.current_position.to_table(), ( self.destination ).to_table() , 2 )
 
 
 		for p in range( len(self.path) - 1 ):
-			pygame.draw.line(self.current_screen, get_color(Colors.ORANGERED) , (self.path[p]).to_table(), ( self.path[p+1] ).to_table() , 2 )
+			pygame.draw.line(self.current_screen, get_color(Colors.KHAKI) , (self.path[p]).to_table(), ( self.path[p+1] ).to_table() , 2 )
 
 		font = pygame.font.SysFont("consolas", int(10) )
 		text = font.render( str(self.ammo_bazooka) + " : " + str(self.ammo_railgun) + " \n " +  self.ai.current_state.state , True, self.COLOR)
