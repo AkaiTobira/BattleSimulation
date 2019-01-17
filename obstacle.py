@@ -2,7 +2,7 @@ import pygame
 
 import math
 from events   import Events, rise_event
-from random   import randint, randrange
+from random   import randint, randrange, gauss
 from vector   import Vector
 from colors   import Colors, get_color, POINT_DISTANCE
 
@@ -72,11 +72,15 @@ class Obstacle:
 	rect             = None
 	covered_space    = None
 
-	points           = None
+	points           = None # for square
+	point_list		 = None # for polygon
+
+	color			 = None
 	
+
 	
 	def __init__(self, screen, screen_size, id, obs_list):
-		self.RADIUS = randrange(0 * POINT_DISTANCE, 10 * POINT_DISTANCE,2*POINT_DISTANCE) 
+		self.RADIUS = randrange(0 * POINT_DISTANCE, 10 * POINT_DISTANCE, 2 * POINT_DISTANCE) 
 		
 		if self.RADIUS == 0 : self.RADIUS += 1
 
@@ -85,7 +89,13 @@ class Obstacle:
 		
 		self.id               = id
 		self.set_position(obs_list)
+		self.generate_square()
+		self.generate_figure() # comment me if you want !!!
 
+		self.color = (randint(0,255), randint(0,255), randint(0,255))
+
+	def generate_square(self):
+		
 		self.rect = pygame.Rect(   self.RADIUS, 
 								 - self.RADIUS,
 								 - self.RADIUS, 
@@ -105,6 +115,28 @@ class Obstacle:
 				   Vector(self.rect.left , self.rect.top   ),
 				   Vector(self.rect.left , self.rect.bottom)
 				 ]
+
+	def linspace(self, start, stop, num_steps):
+		values = []
+		delta = (stop - start) / num_steps
+		for i in range(num_steps):
+			values.append(start + i * delta)
+		return values			 
+
+	def generate_points(self, mean_radius, sigma_radius, num_points):
+		points = []
+		for theta in self.linspace(0, 2 * math.pi - (2 * math.pi/num_points), num_points):
+			radius = gauss(mean_radius, sigma_radius)
+			x = self.current_position.x + radius * math.cos(theta)
+			y = self.current_position.y + radius * math.sin(theta)
+			points.append([x,y])
+		return points			 
+
+	def generate_figure(self):
+		vertices_num = randint(3,5)
+		self.point_list = []
+		self.point_list = self.generate_points(randint(2,5) * POINT_DISTANCE, randint(1,2) * POINT_DISTANCE, vertices_num)
+			
 
 	def is_in_obstacle(self, point):
 		if point.x >= self.rect.right and point.x <= self.rect.left + 1:
@@ -148,15 +180,17 @@ class Obstacle:
 		self.current_screen.blit(text, text_rect)
 
 	def draw(self):
-		pygame.draw.rect( self.current_screen, get_color(Colors.LIGHT_PURPL2),  self.rect  )
-		pygame.draw.rect( self.current_screen, self.COLOR_OUT                ,  self.rect, self.THICK  )
-		pygame.draw.circle(self.current_screen, get_color(Colors.DARK_YELLOW), self.current_position.to_table(), int(self.RADIUS))
+		pygame.draw.rect( self.current_screen, get_color(Colors.GRAY),  self.rect  )
+	#	pygame.draw.rect( self.current_screen, self.COLOR_OUT                ,  self.rect, self.THICK  )
+	#	pygame.draw.circle(self.current_screen, get_color(Colors.DARK_YELLOW), self.current_position.to_table(), int(self.RADIUS))
 	#	pygame.draw.polygon (
 	#		self.current_screen,  
 	#		get_color(Colors.LIGHTER_RED), 
 	#		self.triangle.to_draw(self.current_position),
 	#		1)
-		self.draw_id_number()	
+	#	self.draw_id_number()	
+
+		pygame.draw.polygon(self.current_screen, self.color, self.point_list)
 
 
 	#def is_in_shade(self, point):
