@@ -2,54 +2,155 @@ import pygame
 
 import math
 from events   import Events, rise_event
-from random   import randint, randrange, gauss
+from random   import randint, randrange
 from vector   import Vector
 from colors   import Colors, get_color, POINT_DISTANCE
 
-class Triangle:
+# for randomize length of vectors from center of figure to the vertex
+MIN_DISTANCE = 1
+MAX_DISTANCE = 5
+
+class Shape:
 	vertices = []
 	basic    = [] 
-	position = Vector(0,0)
-	def __init__(self, size):
-		self.vertices = [Vector(0.0,-1.0)*size, Vector(-0.7,1.0)*size, Vector(0.7,1.0)*size]
-		self.basic = self.vertices.copy()
+	position = None
+
+	def __init__(self, shape_vectors):
+		self.position = Vector(randint(0,48)*POINT_DISTANCE, randint(0,32)*POINT_DISTANCE)
+		self.vertices = self.set_vertices(shape_vectors)
+		self.basic = self.vertices.copy()	
+		
+	#	self.rotate(randint(0,360)) # CRASH, vertices outside the points of the graphh
+
+		self.wrapping_square()
+
+	def set_vertices(self, shape_vectors):
+		vertices_list = []
+		for vec in shape_vectors: 
+			vertices_list.append(vec + self.position)
+		return vertices_list	
 		
 	def rotate(self, angle):
 		for i in range(len(self.vertices)):
 			self.vertices[i] = self.basic[i].rotate(angle)
-		
-	def scale_back_line(self, number):
-		temp        = self.basic[0] 
 
-		self.basic[0] = self.basic[0] * number
-		self.basic[1] = self.basic[1] * number
-		self.basic[2] = self.basic[2] * number
-
-		correction       = self.basic[0] - temp 
-
-		for i in range(len(self.vertices)):
-			self.basic[i] = self.basic[i]-correction
-
-
-	def __sign(self, p1, p2, p3):
+	def sign(self, p1, p2, p3):
 		return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y)
+
+	def vertices_to_draw(self):
+		vertices_list = []
+		for v in self.vertices:
+			vertices_list.append(v.to_touple()) 
+			
+		return vertices_list
+
+	def wrapping_square(self):
+		x_min = self.vertices[0].x
+		y_min = self.vertices[0].y
+		x_max = self.vertices[0].x
+		y_max = self.vertices[0].y
+
+		for v in self.vertices:
+			if v.x < x_min : x_min = v.x
+			if v.x > x_max : x_max = v.x
+			if v.y < y_min : y_min = v.y
+			if v.y > y_max : y_max = v.y
+
+		return [(x_min,y_min), (x_max,y_min), (x_max,y_max), (x_min,y_max)]
+
+	
+
+class Triangle ( Shape ):
+
+	def __init__(self):
+		Shape.__init__(self, self.generate_vertices())
+
+	def generate_vertices(self):
+		vertices = []
+		vectors = [	Vector(0,1), Vector(-1,-1), Vector(1,-1)]
+		for v in range(3):
+			vertices.append(vectors[v] * POINT_DISTANCE * randint(MIN_DISTANCE, MAX_DISTANCE))
+		return vertices		
+
+		
+#	def scale_back_line(self, number):
+#		temp        = basic[0] 
+
+#		basic[0] = basic[0] * number
+#		basic[1] = basic[1] * number
+#		basic[2] = basic[2] * number
+
+#		correction       = basic[0] - temp 
+
+#		for i in range(len(vertices)):
+#			basic[i] = basic[i]-correction
+
 
 	def is_in_triangle(self, point):
 
-		d1 = self.__sign(point, self.position + self.vertices[0], self.position + self.vertices[1] )
-		d2 = self.__sign(point, self.position + self.vertices[1], self.position + self.vertices[2] )
-		d3 = self.__sign(point, self.position + self.vertices[2], self.position + self.vertices[0] )
+		d1 = self.sign(point, self.position + self.vertices[0], self.position + self.vertices[1] )
+		d2 = self.sign(point, self.position + self.vertices[1], self.position + self.vertices[2] )
+		d3 = self.sign(point, self.position + self.vertices[2], self.position + self.vertices[0] )
 		
 		has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0)
 		has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0)
 
 		return not (has_neg and has_pos)
 
-	def to_draw(self, position):
-		self.position = position
-		return [ (position + self.vertices[0]).to_touple(),
-				 (position + self.vertices[1]).to_touple(),
-				 (position + self.vertices[2]).to_touple()]
+
+class Quadrangle ( Shape ):
+
+	def __init__(self):
+		Shape.__init__(self, self.generate_vertices())
+
+	def generate_vertices(self):
+		vertices = []
+		vectors = [	Vector(0,1), Vector(1,0), Vector(0,-1), Vector(-1,0)]
+
+		for v in range(4):
+			vertices.append(vectors[v] * POINT_DISTANCE * randint(MIN_DISTANCE, MAX_DISTANCE))
+		return vertices		
+
+
+	def is_in_quadrangle(self, point):
+
+		d1 = self.sign(point, self.position + self.vertices[0], self.position + self.vertices[1] )
+		d2 = self.sign(point, self.position + self.vertices[1], self.position + self.vertices[2] )
+		d3 = self.sign(point, self.position + self.vertices[2], self.position + self.vertices[3] )
+		d4 = self.sign(point, self.position + self.vertices[3], self.position + self.vertices[0] )
+		
+		has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0) or (d4 < 0)
+		has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0) or (d4 > 0)
+
+		return not (has_neg and has_pos)
+
+
+class Pentagon ( Shape ):
+
+	def __init__(self):
+		Shape.__init__(self, self.generate_vertices())
+
+	def generate_vertices(self):
+		vertices = []
+		vectors = [	Vector(0,1), Vector(1,0), Vector(1,-1), Vector(-1,-1), Vector(-1,0)]
+
+		for v in range(5):
+			vertices.append(vectors[v] * POINT_DISTANCE * randint(MIN_DISTANCE, MAX_DISTANCE))
+		return vertices		
+
+
+	def is_in_quadrangle(self, point):
+
+		d1 = self.sign(point, self.position + self.vertices[0], self.position + self.vertices[1] )
+		d2 = self.sign(point, self.position + self.vertices[1], self.position + self.vertices[2] )
+		d3 = self.sign(point, self.position + self.vertices[2], self.position + self.vertices[3] )
+		d4 = self.sign(point, self.position + self.vertices[3], self.position + self.vertices[4] )
+		d5 = self.sign(point, self.position + self.vertices[4], self.position + self.vertices[0] )
+		
+		has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0) or (d4 < 0) or (d5 < 0)
+		has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0) or (d4 > 0) or (d5 > 0)
+
+		return not (has_neg and has_pos)
 
 
 class Obstacle:
@@ -68,14 +169,15 @@ class Obstacle:
 	screen_size		 = Vector(0,0) 
 	current_position = Vector(0,0)
 	velocity         = Vector(0,0)
-	triangle         = None
+
 	rect             = None
 	covered_space    = None
 
-	points           = None # for square
-	point_list		 = None # for polygon
+	points           = None
 
-	color			 = None
+	triangle         = None
+	quadrangle		 = None
+	pentagon 		 = None
 	
 
 	
@@ -90,7 +192,11 @@ class Obstacle:
 		self.id               = id
 		self.set_position(obs_list)
 		self.generate_square()
-		self.generate_figure() # comment me if you want !!!
+	#	self.generate_figure() # comment me if you want !!!
+
+		self.triangle = Triangle()
+		self.quadrangle = Quadrangle()
+		self.pentagon = Pentagon()
 
 		self.color = (randint(0,255), randint(0,255), randint(0,255))
 
@@ -116,26 +222,6 @@ class Obstacle:
 				   Vector(self.rect.left , self.rect.bottom)
 				 ]
 
-	def linspace(self, start, stop, num_steps):
-		values = []
-		delta = (stop - start) / num_steps
-		for i in range(num_steps):
-			values.append(start + i * delta)
-		return values			 
-
-	def generate_points(self, mean_radius, sigma_radius, num_points):
-		points = []
-		for theta in self.linspace(0, 2 * math.pi - (2 * math.pi/num_points), num_points):
-			radius = gauss(mean_radius, sigma_radius)
-			x = self.current_position.x + radius * math.cos(theta)
-			y = self.current_position.y + radius * math.sin(theta)
-			points.append([x,y])
-		return points			 
-
-	def generate_figure(self):
-		vertices_num = randint(3,5)
-		self.point_list = []
-		self.point_list = self.generate_points(randint(2,5) * POINT_DISTANCE, randint(1,2) * POINT_DISTANCE, vertices_num)
 			
 
 	def is_in_obstacle(self, point):
@@ -180,17 +266,17 @@ class Obstacle:
 		self.current_screen.blit(text, text_rect)
 
 	def draw(self):
-		pygame.draw.rect( self.current_screen, get_color(Colors.GRAY),  self.rect  )
-	#	pygame.draw.rect( self.current_screen, self.COLOR_OUT                ,  self.rect, self.THICK  )
-	#	pygame.draw.circle(self.current_screen, get_color(Colors.DARK_YELLOW), self.current_position.to_table(), int(self.RADIUS))
-	#	pygame.draw.polygon (
-	#		self.current_screen,  
-	#		get_color(Colors.LIGHTER_RED), 
-	#		self.triangle.to_draw(self.current_position),
-	#		1)
-	#	self.draw_id_number()	
+		pygame.draw.rect( self.current_screen, get_color(Colors.GRAY),  self.rect  )	
 
-		pygame.draw.polygon(self.current_screen, self.color, self.point_list)
+	#	pygame.draw.polygon(self.current_screen, self.color, self.triangle.vertices_to_draw())
+	#	pygame.draw.polygon(self.current_screen, self.color, self.triangle.wrapping_square(), 1)
+
+		pygame.draw.polygon(self.current_screen, self.color, self.quadrangle.vertices_to_draw())
+		pygame.draw.polygon(self.current_screen, self.color, self.quadrangle.wrapping_square(), 1)
+
+	#	pygame.draw.polygon(self.current_screen, self.color, self.pentagon.vertices_to_draw())
+	#	pygame.draw.polygon(self.current_screen, self.color, self.pentagon.wrapping_square(), 1)
+
 
 
 	#def is_in_shade(self, point):
