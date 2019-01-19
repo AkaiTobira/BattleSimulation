@@ -7,56 +7,73 @@ from vector   import Vector
 from colors   import Colors, get_color, POINT_DISTANCE
 
 # for randomize length of vectors from center of figure to the vertex
-MIN_DISTANCE = 1
-MAX_DISTANCE = 5
+MIN_DISTANCE = 2
+MAX_DISTANCE = 3
 
 class Shape:
-	vertices = []
+	vertices = [] # tak naprawde wektory, trzeba dodac pozycje - get_vertices() zwraca zsumowane
 	basic    = [] 
 	position = None
+	covered  = []
 
 	def __init__(self, shape_vectors):
-		self.position = Vector(randint(0,48)*POINT_DISTANCE, randint(0,32)*POINT_DISTANCE)
-		self.vertices = self.set_vertices(shape_vectors)
+		
+		self.vertices = shape_vectors
 		self.basic = self.vertices.copy()	
-		
-	#	self.rotate(randint(0,360)) # CRASH, vertices outside the points of the graphh
 
-		self.wrapping_square()
 
-	def set_vertices(self, shape_vectors):
-		vertices_list = []
-		for vec in shape_vectors: 
-			vertices_list.append(vec + self.position)
-		return vertices_list	
-		
 	def rotate(self, angle):
 		for i in range(len(self.vertices)):
 			self.vertices[i] = self.basic[i].rotate(angle)
 
+
 	def sign(self, p1, p2, p3):
 		return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y)
+
 
 	def vertices_to_draw(self):
 		vertices_list = []
 		for v in self.vertices:
-			vertices_list.append(v.to_touple()) 
+			vertices_list.append((v + self.position).to_touple()) 
 			
 		return vertices_list
 
-	def wrapping_square(self):
-		x_min = self.vertices[0].x
-		y_min = self.vertices[0].y
-		x_max = self.vertices[0].x
-		y_max = self.vertices[0].y
+	def get_vertices(self):
+		vertices_list = []
+		for v in self.vertices:
+			vertices_list.append(v + self.position) 
+			
+		return vertices_list
+
+
+	def wrapping_square_border_values(self):
+		vertex = self.vertices[0] + self.position
+		x_min = vertex.x
+		y_min = vertex.y
+		x_max = vertex.x
+		y_max = vertex.y
 
 		for v in self.vertices:
+			v += self.position
 			if v.x < x_min : x_min = v.x
 			if v.x > x_max : x_max = v.x
 			if v.y < y_min : y_min = v.y
 			if v.y > y_max : y_max = v.y
 
-		return [(x_min,y_min), (x_max,y_min), (x_max,y_max), (x_min,y_max)]
+		return [x_min, x_max, y_min, y_max]
+
+
+	def wrapping_square(self):
+		values = self.wrapping_square_border_values()
+		
+		return [(values[0],values[2]), (values[1],values[2]), (values[1],values[3]), (values[0],values[3])]
+
+	def is_in_wrapping_square(self, point):
+		square = self.wrapping_square_border_values()
+		if point.x >= square[0] and point.x <= square[1] and point.y >= square[2] and point.y <= square[3]: 
+			return True
+		return False
+	
 
 	
 
@@ -72,6 +89,16 @@ class Triangle ( Shape ):
 			vertices.append(vectors[v] * POINT_DISTANCE * randint(MIN_DISTANCE, MAX_DISTANCE))
 		return vertices		
 
+	def is_in_figure(self, point):
+
+		d1 = self.sign(point, self.position + self.vertices[0], self.position + self.vertices[1] )
+		d2 = self.sign(point, self.position + self.vertices[1], self.position + self.vertices[2] )
+		d3 = self.sign(point, self.position + self.vertices[2], self.position + self.vertices[0] )
+		
+		has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0)
+		has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0)
+
+		return not (has_neg and has_pos)
 		
 #	def scale_back_line(self, number):
 #		temp        = basic[0] 
@@ -84,19 +111,6 @@ class Triangle ( Shape ):
 
 #		for i in range(len(vertices)):
 #			basic[i] = basic[i]-correction
-
-
-	def is_in_triangle(self, point):
-
-		d1 = self.sign(point, self.position + self.vertices[0], self.position + self.vertices[1] )
-		d2 = self.sign(point, self.position + self.vertices[1], self.position + self.vertices[2] )
-		d3 = self.sign(point, self.position + self.vertices[2], self.position + self.vertices[0] )
-		
-		has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0)
-		has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0)
-
-		return not (has_neg and has_pos)
-
 
 class Quadrangle ( Shape ):
 
@@ -112,7 +126,7 @@ class Quadrangle ( Shape ):
 		return vertices		
 
 
-	def is_in_quadrangle(self, point):
+	def is_in_figure(self, point):
 
 		d1 = self.sign(point, self.position + self.vertices[0], self.position + self.vertices[1] )
 		d2 = self.sign(point, self.position + self.vertices[1], self.position + self.vertices[2] )
@@ -139,7 +153,7 @@ class Pentagon ( Shape ):
 		return vertices		
 
 
-	def is_in_quadrangle(self, point):
+	def is_in_figure(self, point):
 
 		d1 = self.sign(point, self.position + self.vertices[0], self.position + self.vertices[1] )
 		d2 = self.sign(point, self.position + self.vertices[1], self.position + self.vertices[2] )
@@ -155,9 +169,7 @@ class Pentagon ( Shape ):
 
 class Obstacle:
 	RADIUS 			 = 0
-	COLOR_OUT 		 = get_color(Colors.LIGHT_PURPLE)
 	THICK  			 = 2
-
 
 	is_dead          = False
 	id 			 	 = -1
@@ -172,33 +184,77 @@ class Obstacle:
 
 	rect             = None
 	covered_space    = None
-
 	points           = None
 
-	triangle         = None
-	quadrangle		 = None
-	pentagon 		 = None
-	
+	representation   = None
 
+	
 	
 	def __init__(self, screen, screen_size, id, obs_list):
 		self.RADIUS = randrange(0 * POINT_DISTANCE, 10 * POINT_DISTANCE, 2 * POINT_DISTANCE) 
 		
 		if self.RADIUS == 0 : self.RADIUS += 1
 
-		self.current_screen   = screen
+		self.current_screen = screen
 		self.screen_size = screen_size
 		
-		self.id               = id
-		self.set_position(obs_list)
+		self.id = id
 		self.generate_square()
-	#	self.generate_figure() # comment me if you want !!!
 
-		self.triangle = Triangle()
-		self.quadrangle = Quadrangle()
-		self.pentagon = Pentagon()
+		fig = randint(1,3)
+		if 	 fig == 1 : self.representation = Triangle()
+		elif fig == 2 : self.representation = Quadrangle()
+		elif fig == 3 : self.representation = Pentagon()
+
+		self.set_position(obs_list, screen_size)
 
 		self.color = (randint(0,255), randint(0,255), randint(0,255))
+	#	self.color = get_color(Colors.GRAY)
+
+		self.representation.covered = self.coveredSpace()
+		points = self.representation.get_vertices()
+
+
+	def coveredSpace(self):
+
+		covered_space = []
+		square = self.representation.wrapping_square_border_values()
+
+		for x in range( square[0], square[1] + 1, POINT_DISTANCE ):
+			for y in range( square[2], square[3] + 1, POINT_DISTANCE ):
+				if self.representation.is_in_figure(Vector(x,y)):
+					covered_space.append(Vector(x,y))
+
+		return covered_space			
+		
+
+	def set_position(self, obs_list, screen_size):
+		positionsX = list(range(0, screen_size.x, POINT_DISTANCE ) )
+		positionsY = list(range(0, screen_size.y, POINT_DISTANCE ) )
+		self.representation.position = Vector( positionsX[randint(0, len(positionsX)-1)], positionsY[randint(0, len(positionsY)-1)])
+
+		overlap = False
+		for i in obs_list:
+			if self.is_colliding(i):
+				overlap = True
+
+		while overlap:
+			overlap = False
+			self.representation.position = Vector( positionsX[randint(0, len(positionsX)-1)], positionsY[randint(0, len(positionsY)-1)] )
+			for i in obs_list:
+				if self.is_colliding(i):
+					overlap = True
+
+
+	def is_colliding(self, other):
+
+		for v in self.representation.get_vertices():
+			if other.representation.is_in_wrapping_square(v) : return True	
+
+		for v in self.representation.covered:
+			if other.representation.is_in_wrapping_square(v) : return True		
+
+		return False
 
 	def generate_square(self):
 		
@@ -234,48 +290,18 @@ class Obstacle:
 			return self.covered_space
 
 
-	def set_position(self, obs_list):
-		positionsX = list(range(0,self.screen_size.x, POINT_DISTANCE ) )
-		positionsY = list(range(0,self.screen_size.y, POINT_DISTANCE ) )
-		self.current_position = Vector( positionsX[randint(0, len(positionsX)-1)], positionsY[randint(0, len(positionsY)-1)] )
-
-		#overlap = False
-		#for i in obs_list:
-		#	if self.is_colliding(i):
-		#		overlap = True
-
-		#while overlap:
-		#	overlap = False
-		#	self.current_position = Vector( positionsX[randint(0, len(positionsX)-1)], positionsY[randint(0, len(positionsY)-1)] )
-		#	for i in obs_list:
-		#		if self.is_colliding(i):
-		#			overlap = True
-
-		self.face 	  = Vector(self.current_position.x, self.current_position.y - 200)
-
-	def is_colliding(self, other):
-		distance = (self.current_position - other.current_position).len()
-		if distance > (self.RADIUS + other.RADIUS): return False
-		return True
-
 	def draw_id_number(self):
 		font = pygame.font.SysFont("consolas", int(self.RADIUS/5) )
 
-		text = font.render(str(self.RADIUS ) + " X " + str(self.RADIUS ) , True, self.COLOR_OUT)
+		text = font.render(str(self.RADIUS ) + " X " + str(self.RADIUS ) , True, self.color)
 		text_rect = text.get_rect(center=(self.current_position.x, self.current_position.y))
 		self.current_screen.blit(text, text_rect)
 
 	def draw(self):
-		pygame.draw.rect( self.current_screen, get_color(Colors.GRAY),  self.rect  )	
+	#	pygame.draw.rect( self.current_screen, get_color(Colors.GRAY),  self.rect  )	
 
-	#	pygame.draw.polygon(self.current_screen, self.color, self.triangle.vertices_to_draw())
-	#	pygame.draw.polygon(self.current_screen, self.color, self.triangle.wrapping_square(), 1)
-
-		pygame.draw.polygon(self.current_screen, self.color, self.quadrangle.vertices_to_draw())
-		pygame.draw.polygon(self.current_screen, self.color, self.quadrangle.wrapping_square(), 1)
-
-	#	pygame.draw.polygon(self.current_screen, self.color, self.pentagon.vertices_to_draw())
-	#	pygame.draw.polygon(self.current_screen, self.color, self.pentagon.wrapping_square(), 1)
+		pygame.draw.polygon(self.current_screen, self.color, self.representation.vertices_to_draw())
+		pygame.draw.polygon(self.current_screen, self.color, self.representation.wrapping_square(), 1)
 
 
 
