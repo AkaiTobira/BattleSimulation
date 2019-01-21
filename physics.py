@@ -36,6 +36,7 @@ class UnitManager:
 		self.start            = time.time()
 		
 		for obst in units[1]:
+			print(obst.get_covered_space())
 			self.graph.remove_nodes( obst.get_covered_space() )
 		self.graph.generate_neighbour_net()
 
@@ -54,7 +55,7 @@ class UnitManager:
 		for item in self.items_list:
 			item.draw()
 
-	#	self.graph.draw(self.screen)
+		self.graph.draw(self.screen)
 		
 	def get_enemy(self, l_id):
 		for enemy in self.enemy_list:

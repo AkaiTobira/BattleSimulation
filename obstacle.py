@@ -7,8 +7,8 @@ from vector   import Vector
 from colors   import Colors, get_color, POINT_DISTANCE
 
 # for randomize length of vectors from center of figure to the vertex
-MIN_DISTANCE = 2
-MAX_DISTANCE = 3
+MIN_DISTANCE = 1
+MAX_DISTANCE = 5
 
 class Shape:
 	vertices = [] # tak naprawde wektory, trzeba dodac pozycje - get_vertices() zwraca zsumowane
@@ -74,9 +74,6 @@ class Shape:
 			return True
 		return False
 	
-
-	
-
 class Triangle ( Shape ):
 
 	def __init__(self):
@@ -211,19 +208,21 @@ class Obstacle:
 		self.color = (randint(0,255), randint(0,255), randint(0,255))
 	#	self.color = get_color(Colors.GRAY)
 
-		self.representation.covered = self.coveredSpace()
+		self.representation.covered = self.generate_covered_space()
 		points = self.representation.get_vertices()
 
 
-	def coveredSpace(self):
+	def generate_covered_space(self):
 
 		covered_space = []
 		square = self.representation.wrapping_square_border_values()
 
 		for x in range( square[0], square[1] + 1, POINT_DISTANCE ):
 			for y in range( square[2], square[3] + 1, POINT_DISTANCE ):
-				if self.representation.is_in_figure(Vector(x,y)):
-					covered_space.append(Vector(x,y))
+				if self.representation.is_in_figure(Vector(x,y) + self.current_position):
+					covered_space.append(Vector(x,y) + self.current_position)
+
+	#	print(covered_space)
 
 		return covered_space			
 		
@@ -264,10 +263,10 @@ class Obstacle:
 								   self.RADIUS)
 		self.rect.center = self.current_position.to_touple()
 
-		self.covered_space = []
-		for x in range( self.rect.right,  self.rect.left + 1, POINT_DISTANCE ):
-			for y in range( self.rect.top, self.rect.bottom + 1, POINT_DISTANCE ):
-				self.covered_space.append(Vector(x,y))
+		#self.covered_space = self.representation.covered
+		#for x in range( self.rect.right,  self.rect.left + 1, POINT_DISTANCE ):
+		#	for y in range( self.rect.top, self.rect.bottom + 1, POINT_DISTANCE ):
+		#		self.covered_space.append(Vector(x,y))
 
 		self.RADIUS = self.RADIUS/2
 
@@ -287,7 +286,7 @@ class Obstacle:
 		return False
 		
 	def get_covered_space(self):
-			return self.covered_space
+			return self.representation.covered
 
 
 	def draw_id_number(self):
