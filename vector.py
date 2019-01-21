@@ -97,6 +97,9 @@ class Vector:
 	def __lt__(self, other):
 		return self.len() < other.len() 
 
+	def swap(self):
+		return Vector(self.y,self.x)
+
 	def to_local_space(self,v):
 		angle = self.angle_between(Vector(self.x,0))
 		return Vector(  (v.x-self.x) * math.cos(angle) + (v.y-self.y)* math.sin(angle),

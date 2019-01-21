@@ -16,10 +16,129 @@ class Shape:
 	position = None
 	covered  = []
 
-	def __init__(self, shape_vectors):
-		
-		self.vertices = shape_vectors
+	def __init__(self):
+		self.vertices = []
+		self.number_of_verticles = 3#randint(3, 7)
+		self.generate()
 		self.basic = self.vertices.copy()	
+		self.covered = []
+
+	def solve( self, P1, P2, P3, P4):
+		nominatorA  =  (P4.x - P3.x)*(P1.y - P3.y) - (P4.y - P3.y)*(P1.x - P3.x)
+		nominatorB  =  (P2.x - P1.x)*(P1.y - P3.y) - (P2.y - P1.y)*(P1.x - P3.x)
+		denominator =  (P4.y - P3.y)*(P2.x - P1.x) - (P4.x - P3.x)*(P2.y - P1.y)
+
+		if denominator == 0 : return None
+
+		uA = nominatorA/denominator
+		uB = nominatorB/denominator
+
+		if uA < 0 or uA > 1 : return None
+		if uB < 0 or uB > 1 : return None
+
+		return Vector( P1.x + uA*(P2.x-P1.x), P1.y + uA*(P2.y-P1.y) )
+
+
+	def is_in_figure(self, point):
+
+		counter = 0
+		for v in range( self.number_of_verticles -1):
+
+		#	print(point,                            point + Vector(1000,0), 
+		#				  self.vertices[v] + self.position, self.vertices[v+1] + self.position  )
+
+			x = self.solve(point, point + Vector(1000,0), self.vertices[v] + self.position, self.vertices[v+1] + self.position )
+			if self.solve(point, point + Vector(1000,0), self.vertices[v+1] + self.position, self.vertices[v] + self.position ) is None : continue
+			print(point,                            point + Vector(1000,0), 
+						  self.vertices[v] + self.position, self.vertices[v+1] + self.position  )
+			print( x )
+			counter += 1
+
+		x = self.solve(point, point + Vector(1000,0), self.vertices[0] + self.position, self.vertices[self.number_of_verticles-1] + self.position )
+		if not x is None : counter +=1
+
+
+		print( counter )
+
+	#	return self.__no_use(point)
+		return counter % 2 == 1 
+	#	for i in self.vertices:
+	#		print( i + self.position )
+
+
+	def __no_use(self, point):
+
+		functions = []
+
+		for i in range( self.number_of_verticles - 1 ):
+			begin = self.vertices[i]
+			end   = self.vertices[i+1]
+			functions.append( [ begin.y - end.y , end.x - begin.x, ( begin.x - end.x)*begin.y + ( end.y - begin.y)*begin.x ] )
+
+		begin = self.vertices[self.number_of_verticles-1]
+		end   = self.vertices[0]
+		functions.append( [ begin.y - end.y , end.x - begin.x, ( begin.x - end.x)*begin.y + ( end.y - begin.y)*begin.x ] )
+
+		begin = point
+		end   = point + Vector(10000,0)
+		function = [ begin.y - end.y , end.x - begin.x, ( begin.x - end.x)*begin.y + ( end.y - begin.y)*begin.x ]
+
+		cout = 0
+		for v in functions:
+			decimator = v[0] * function[1] - v[1] * function[0]
+			if decimator  == 0 : 
+		#		print( "FOUND DEAD")
+				cout += 1
+				continue 
+
+			x = ( v[1]*function[2] - v[2]*function[1] ) / decimator
+			if x < point.x: continue
+		#	print("Found ALIVE")
+			cout +=1
+			continue
+			y = ( v[2]*function[0] - v[0]*function[2] ) / decimator
+
+		print( cout )
+		return cout % 2 == 1 
+
+
+
+	def get_center(self):
+		center = Vector(0,0)
+		for i in range(self.number_of_verticles):
+			center += self.vertices[i]
+		return (center / self.number_of_verticles) + self.position
+
+
+	def aTan2(self,y ,x):
+		coeff_1 = math.pi / 4
+		coeff_2 = 3 * coeff_1
+		abs_y = math.fabs(y)
+		angle = 0
+		if x > 0 :
+			r = (x - abs_y) / (x + abs_y)
+			angle = coeff_1 - coeff_1 * r
+		else :
+			r = (x + abs_y) / (abs_y - x)
+			angle = coeff_2 - coeff_1 * r
+		return  -angle if y < 0 else angle
+
+	def generate(self):
+		center = Vector(0,0)
+		for i in range(self.number_of_verticles):
+			self.vertices.append( Vector( randint(-5, 5), randint(-5,5) ) * POINT_DISTANCE)
+			center += self.vertices[i]
+		center /= self.number_of_verticles 
+
+		for i in range( self.number_of_verticles):
+			first = ( self.vertices[i] - center).swap()
+			for j in range( self.number_of_verticles-1):
+				second = (self.vertices[j] - center).swap()
+				if self.vertices[j].angle_between(center) <= self.vertices[i].angle_between(center):
+		#		if self.aTan2( first.x, first.y ) <= self.aTan2( second.x, second.y ):
+					t = self.vertices[i]
+					self.vertices[i] = self.vertices[j]
+					self.vertices[j] = t
 
 
 	def rotate(self, angle):
@@ -73,96 +192,17 @@ class Shape:
 		if point.x >= square[0] and point.x <= square[1] and point.y >= square[2] and point.y <= square[3]: 
 			return True
 		return False
-	
-class Triangle ( Shape ):
 
-	def __init__(self):
-		Shape.__init__(self, self.generate_vertices())
+#	def is_in_figure(self, point):
 
-	def generate_vertices(self):
-		vertices = []
-		vectors = [	Vector(0,1), Vector(-1,-1), Vector(1,-1)]
-		for v in range(3):
-			vertices.append(vectors[v] * POINT_DISTANCE * randint(MIN_DISTANCE, MAX_DISTANCE))
-		return vertices		
-
-	def is_in_figure(self, point):
-
-		d1 = self.sign(point, self.position + self.vertices[0], self.position + self.vertices[1] )
-		d2 = self.sign(point, self.position + self.vertices[1], self.position + self.vertices[2] )
-		d3 = self.sign(point, self.position + self.vertices[2], self.position + self.vertices[0] )
+#		d1 = self.sign(point, self.position + self.vertices[0], self.position + self.vertices[1] )
+#		d2 = self.sign(point, self.position + self.vertices[1], self.position + self.vertices[2] )
+#		d3 = self.sign(point, self.position + self.vertices[2], self.position + self.vertices[0] )
 		
-		has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0)
-		has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0)
-
-		return not (has_neg and has_pos)
-		
-#	def scale_back_line(self, number):
-#		temp        = basic[0] 
-
-#		basic[0] = basic[0] * number
-#		basic[1] = basic[1] * number
-#		basic[2] = basic[2] * number
-
-#		correction       = basic[0] - temp 
-
-#		for i in range(len(vertices)):
-#			basic[i] = basic[i]-correction
-
-class Quadrangle ( Shape ):
-
-	def __init__(self):
-		Shape.__init__(self, self.generate_vertices())
-
-	def generate_vertices(self):
-		vertices = []
-		vectors = [	Vector(0,1), Vector(1,0), Vector(0,-1), Vector(-1,0)]
-
-		for v in range(4):
-			vertices.append(vectors[v] * POINT_DISTANCE * randint(MIN_DISTANCE, MAX_DISTANCE))
-		return vertices		
-
-
-	def is_in_figure(self, point):
-
-		d1 = self.sign(point, self.position + self.vertices[0], self.position + self.vertices[1] )
-		d2 = self.sign(point, self.position + self.vertices[1], self.position + self.vertices[2] )
-		d3 = self.sign(point, self.position + self.vertices[2], self.position + self.vertices[3] )
-		d4 = self.sign(point, self.position + self.vertices[3], self.position + self.vertices[0] )
-		
-		has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0) or (d4 < 0)
-		has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0) or (d4 > 0)
-
-		return not (has_neg and has_pos)
-
-
-class Pentagon ( Shape ):
-
-	def __init__(self):
-		Shape.__init__(self, self.generate_vertices())
-
-	def generate_vertices(self):
-		vertices = []
-		vectors = [	Vector(0,1), Vector(1,0), Vector(1,-1), Vector(-1,-1), Vector(-1,0)]
-
-		for v in range(5):
-			vertices.append(vectors[v] * POINT_DISTANCE * randint(MIN_DISTANCE, MAX_DISTANCE))
-		return vertices		
-
-
-	def is_in_figure(self, point):
-
-		d1 = self.sign(point, self.position + self.vertices[0], self.position + self.vertices[1] )
-		d2 = self.sign(point, self.position + self.vertices[1], self.position + self.vertices[2] )
-		d3 = self.sign(point, self.position + self.vertices[2], self.position + self.vertices[3] )
-		d4 = self.sign(point, self.position + self.vertices[3], self.position + self.vertices[4] )
-		d5 = self.sign(point, self.position + self.vertices[4], self.position + self.vertices[0] )
-		
-		has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0) or (d4 < 0) or (d5 < 0)
-		has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0) or (d4 > 0) or (d5 > 0)
-
-		return not (has_neg and has_pos)
-
+#		has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0)
+#		has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0)
+#
+#		return not (has_neg and has_pos)
 
 class Obstacle:
 	RADIUS 			 = 0
@@ -198,10 +238,11 @@ class Obstacle:
 		self.id = id
 		self.generate_square()
 
-		fig = randint(1,3)
-		if 	 fig == 1 : self.representation = Triangle()
-		elif fig == 2 : self.representation = Quadrangle()
-		elif fig == 3 : self.representation = Pentagon()
+	#	if 	 fig == 1 : self.representation = Triangle()
+	#	elif fig == 2 : self.representation = Quadrangle()
+	#	elif fig == 3 : self.representation = Pentagon()
+
+		self.representation = Shape()
 
 		self.set_position(obs_list, screen_size)
 
@@ -213,16 +254,13 @@ class Obstacle:
 
 
 	def generate_covered_space(self):
-
 		covered_space = []
 		square = self.representation.wrapping_square_border_values()
 
 		for x in range( square[0], square[1] + 1, POINT_DISTANCE ):
 			for y in range( square[2], square[3] + 1, POINT_DISTANCE ):
-				if self.representation.is_in_figure(Vector(x,y) + self.current_position):
-					covered_space.append(Vector(x,y) + self.current_position)
-
-	#	print(covered_space)
+				if self.representation.is_in_figure(Vector(x,y)):
+					covered_space.append(Vector(x,y) )
 
 		return covered_space			
 		
@@ -237,13 +275,14 @@ class Obstacle:
 			if self.is_colliding(i):
 				overlap = True
 
-		while overlap:
-			overlap = False
-			self.representation.position = Vector( positionsX[randint(0, len(positionsX)-1)], positionsY[randint(0, len(positionsY)-1)] )
-			for i in obs_list:
-				if self.is_colliding(i):
-					overlap = True
+#		while overlap:
+#			overlap = False
+#			self.representation.position = Vector( positionsX[randint(0, len(positionsX)-1)], positionsY[randint(0, len(positionsY)-1)] )
+#			for i in obs_list:
+#				if self.is_colliding(i):
+#					overlap = True
 
+		self.current_position = self.representation.position
 
 	def is_colliding(self, other):
 
@@ -299,9 +338,17 @@ class Obstacle:
 	def draw(self):
 	#	pygame.draw.rect( self.current_screen, get_color(Colors.GRAY),  self.rect  )	
 
-		pygame.draw.polygon(self.current_screen, self.color, self.representation.vertices_to_draw())
-		pygame.draw.polygon(self.current_screen, self.color, self.representation.wrapping_square(), 1)
 
+
+		pygame.draw.polygon(self.current_screen, self.color, self.representation.vertices_to_draw())
+	#	pygame.draw.polygon(self.current_screen, self.color, self.representation.wrapping_square(), 1)
+		pygame.draw.circle(self.current_screen, (255,123,123), (self.representation.get_center()).to_touple(), 5, 5)
+
+		font = pygame.font.SysFont("consolas", int(15) )
+		for i in range(self.representation.number_of_verticles):
+			text = font.render( str(int(  i  )) + " : " + str(int(self.representation.vertices[i].angle_between(self.representation.get_center()))) , True, get_color(Colors.WHITE))
+			text_rect = text.get_rect(center=(self.representation.vertices[i].x + self.current_position.x, self.representation.vertices[i].y + self.current_position.y - 10))
+			self.current_screen.blit(text, text_rect)
 
 
 	#def is_in_shade(self, point):
