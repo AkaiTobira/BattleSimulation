@@ -36,7 +36,7 @@ class UnitManager:
 		self.start            = time.time()
 		
 		for obst in units[1]:
-			print(obst.get_covered_space())
+		#	print(obst.get_covered_space())
 			self.graph.remove_nodes( obst.get_covered_space() )
 		self.graph.generate_neighbour_net()
 
@@ -273,6 +273,11 @@ class CollisionSystem:
 				if obj.is_dead : continue
 #			if missle.current_position.distance_to(obj.current_position).len() < obj.RADIUS:
 				missle.make_explode() 	
+			if obj.state == "Const":
+				if obj.representation.is_in_figure(missle.current_position):
+					if obj.is_dead : continue
+	#			if missle.current_position.distance_to(obj.current_position).len() < obj.RADIUS:
+					missle.make_explode() 
 
 	def update(self, delta):
 		self.__predict_collisions(delta)

@@ -97,17 +97,33 @@ class Triangle ( Shape ):
 
 		return not (has_neg and has_pos)
 		
-#	def scale_back_line(self, number):
-#		temp        = basic[0] 
+class Square ( Shape ):
 
-#		basic[0] = basic[0] * number
-#		basic[1] = basic[1] * number
-#		basic[2] = basic[2] * number
+	def __init__(self):
+		Shape.__init__(self, self.generate_vertices())
 
-#		correction       = basic[0] - temp 
+	def generate_vertices(self):
+		vertices = []
+		vectors = [	Vector(1,1), Vector(1,-1), Vector(-1,-1), Vector(-1,1)]
 
-#		for i in range(len(vertices)):
-#			basic[i] = basic[i]-correction
+		r = POINT_DISTANCE * randint(MIN_DISTANCE, MAX_DISTANCE)
+
+		for v in range(4):
+			vertices.append(vectors[v] * r)
+		return vertices		
+
+
+	def is_in_figure(self, point):
+
+		d1 = self.sign(point, self.position + self.vertices[0], self.position + self.vertices[1] )
+		d2 = self.sign(point, self.position + self.vertices[1], self.position + self.vertices[2] )
+		d3 = self.sign(point, self.position + self.vertices[2], self.position + self.vertices[3] )
+		d4 = self.sign(point, self.position + self.vertices[3], self.position + self.vertices[0] )
+		
+		has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0) or (d4 < 0)
+		has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0) or (d4 > 0)
+
+		return not (has_neg and has_pos)
 
 class Quadrangle ( Shape ):
 
@@ -198,10 +214,13 @@ class Obstacle:
 		self.id = id
 	#	self.generate_square()
 
-		fig = randint(1,3)
+		fig = randint(1,8)
 		if 	 fig == 1 : self.representation = Triangle()
 		elif fig == 2 : self.representation = Quadrangle()
 		elif fig == 3 : self.representation = Pentagon()
+		else : self.representation = Square()
+
+
 
 		self.set_position(obs_list, screen_size)
 
@@ -237,12 +256,12 @@ class Obstacle:
 			if self.is_colliding(i):
 				overlap = True
 
-		while overlap:
-			overlap = False
-			self.representation.position = Vector( positionsX[randint(0, len(positionsX)-1)], positionsY[randint(0, len(positionsY)-1)] )
-			for i in obs_list:
-				if self.is_colliding(i):
-					overlap = True
+	#	while overlap:
+	#		overlap = False
+	#		self.representation.position = Vector( positionsX[randint(0, len(positionsX)-1)], positionsY[randint(0, len(positionsY)-1)] )
+	#		for i in obs_list:
+	#			if self.is_colliding(i):
+	#				overlap = True
 
 
 	def is_colliding(self, other):
@@ -306,7 +325,7 @@ class Obstacle:
 	#	pygame.draw.rect( self.current_screen, get_color(Colors.GRAY),  self.rect  )	
 
 		pygame.draw.polygon(self.current_screen, self.color, self.representation.vertices_to_draw())
-		pygame.draw.polygon(self.current_screen, self.color, self.representation.wrapping_square(), 1)
+	#	pygame.draw.polygon(self.current_screen, self.color, self.representation.wrapping_square(), 1)
 
 
 

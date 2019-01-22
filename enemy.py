@@ -238,7 +238,7 @@ class Enemy2:
 	def draw(self):
 		pygame.draw.line(self.current_screen, get_color(Colors.CRIMSON) ,self.current_position.to_table(), ( self.current_position + (self.velocity.norm() * 50 ) ).to_table() , 2 )
 		if self.draw_railgun : 
-			pygame.draw.line(self.current_screen, get_color(Colors.DARK_VIOLET) , (self.current_position + (self.velocity.norm() * 5 )).to_table(), ( self.railgun_to ).to_table() , 2 )
+			pygame.draw.line(self.current_screen, get_color(Colors.ORANGERED) , (self.current_position + (self.velocity.norm() * 5 )).to_table(), ( self.railgun_to ).to_table() , 2 )
 			if time.time() - self.railgun_time_to_draw > 0.67:
 				self.draw_railgun = False
 
