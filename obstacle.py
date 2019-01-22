@@ -7,8 +7,8 @@ from vector   import Vector
 from colors   import Colors, get_color, POINT_DISTANCE
 
 # for randomize length of vectors from center of figure to the vertex
-MIN_DISTANCE = 1
-MAX_DISTANCE = 5
+MIN_DISTANCE = 2
+MAX_DISTANCE = 4
 
 class Shape:
 	vertices = [] # tak naprawde wektory, trzeba dodac pozycje - get_vertices() zwraca zsumowane
@@ -196,7 +196,7 @@ class Obstacle:
 		self.screen_size = screen_size
 		
 		self.id = id
-		self.generate_square()
+	#	self.generate_square()
 
 		fig = randint(1,3)
 		if 	 fig == 1 : self.representation = Triangle()
@@ -205,11 +205,11 @@ class Obstacle:
 
 		self.set_position(obs_list, screen_size)
 
-		self.color = (randint(0,255), randint(0,255), randint(0,255))
-	#	self.color = get_color(Colors.GRAY)
+	#	self.color = (randint(0,255), randint(0,255), randint(0,255))
+		self.color = (255, 102, 102)
 
 		self.representation.covered = self.generate_covered_space()
-		points = self.representation.get_vertices()
+		self.points = self.representation.get_vertices()
 
 
 	def generate_covered_space(self):
@@ -280,10 +280,16 @@ class Obstacle:
 			
 
 	def is_in_obstacle(self, point):
-		if point.x >= self.rect.right and point.x <= self.rect.left + 1:
-			if point.y >= self.rect.top and point.y <= self.rect.bottom + 1:
-				return True
-		return False
+	#	if point.x >= self.rect.right and point.x <= self.rect.left + 1:
+	#		if point.y >= self.rect.top and point.y <= self.rect.bottom + 1:
+	#			return True
+	#	return False
+
+		for p in self.representation.covered:
+			if p == point : return True
+		for p in self.points:
+			if p == point : return True
+		return False		
 		
 	def get_covered_space(self):
 			return self.representation.covered
